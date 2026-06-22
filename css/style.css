@@ -1,0 +1,801 @@
+/* ============================================
+   算法可视化系统 - 公共样式表
+   负责人：孙郭昕
+   ============================================ */
+
+/* ---------- Design Tokens （设计令牌 / 全局CSS变量） ---------- */
+/* 在 :root 中定义全局变量，方便统一管理颜色、间距、字体等，修改一处即可全局生效 */
+:root {
+    --bg: #0f1724;                              /* 页面主背景色（深蓝灰） */
+    --panel: #0b1220;                           /* 面板/卡片背景色 */
+    --muted: #94a3b8;                           /* 次要文字颜色（灰蓝色，用于说明、标签等） */
+    --accent: #3b82f6;                          /* 主强调色（蓝色，用于按钮、链接、高亮） */
+    --accent-2: #06b6d4;                        /* 辅助强调色（青色，用于渐变搭配） */
+    --success: #22c55e;                         /* 成功状态色（绿色） */
+    --warning: #f59e0b;                         /* 警告状态色（橙色） */
+    --danger: #ef4444;                          /* 危险/错误状态色（红色） */
+    --card: #0b1228;                            /* 卡片专用背景色 */
+    --glass: rgba(255,255,255,0.04);            /* 玻璃拟态背景（极低透明白，营造毛玻璃质感） */
+    --glass-border: rgba(255,255,255,0.06);     /* 玻璃拟态边框色 */
+    --radius: 8px;                              /* 常规圆角半径 */
+    --radius-lg: 12px;                          /* 大圆角半径（面板级别） */
+    --shadow: 0 8px 24px rgba(2,6,23,0.6);      /* 主阴影（大元素） */
+    --shadow-sm: 0 2px 8px rgba(2,6,23,0.4);    /* 小阴影（小元素） */
+    --mono: 'Consolas', 'Courier New', monospace;                       /* 等宽字体（代码/日志用） */
+    --ui-font: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; /* UI界面字体 */
+    --transition: 0.2s ease;                    /* 统一过渡动画时长 */
+}
+
+/* ---------- Reset & Base （全局重置与基础样式） ---------- */
+/* 清除所有元素的默认 margin/padding，使用 border-box 计算盒模型 */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+    font-family: var(--ui-font);                                /* 使用定义的UI字体 */
+    background: linear-gradient(180deg, var(--bg), #071026 120%); /* 从上到下的深色渐变背景 */
+    color: #e6eef8;                                             /* 主文字颜色（浅蓝白） */
+    -webkit-font-smoothing: antialiased;                        /* 字体抗锯齿（Mac/Chrome） */
+    -moz-osx-font-smoothing: grayscale;                         /* 字体抗锯齿（Firefox） */
+    line-height: 1.5;                                           /* 行高1.5倍，提升可读性 */
+    padding: 24px;                                              /* 页面内边距 */
+}
+
+/* 链接样式：默认蓝色无下划线，悬停变青色 */
+a { color: var(--accent); text-decoration: none; transition: color var(--transition); }
+a:hover { color: var(--accent-2); }
+
+/* 代码块保持透明背景，继承文字颜色，使用等宽字体 */
+pre, code { background: transparent; color: inherit; font-family: var(--mono); }
+
+/* ---------- Site Header （网站顶部导航栏） ---------- */
+/* 顶部栏使用flex布局，左侧放品牌Logo，右侧放导航链接 */
+.site-header {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    justify-content: space-between;   /* 两端对齐：Logo在左，导航在右 */
+    margin-bottom: 18px;
+}
+
+/* 品牌区域：Logo图标 + 网站标题 */
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.brand .logo {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2)); /* 蓝→青渐变 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    color: #fff;
+    font-weight: 700;
+}
+.brand .title {
+    font-weight: 700;
+    font-size: 1.15rem;
+    letter-spacing: -0.02em;  /* 轻微收紧字间距，使标题更紧凑 */
+}
+
+/* 导航链接区域 */
+.nav-links {
+    display: flex;
+    gap: 8px;
+}
+.nav-links a {
+    padding: 6px 14px;
+    border-radius: var(--radius);
+    font-size: 0.9rem;
+    color: var(--muted);              /* 默认灰色 */
+    transition: all var(--transition);
+}
+.nav-links a:hover,
+.nav-links a.active {                 /* 悬停或当前激活页面的链接 */
+    background: var(--glass);
+    color: #e6eef8;                   /* 高亮为白色 */
+}
+
+/* ---------- Layout （页面布局系统） ---------- */
+/* .container: 页面内容最大宽度容器，居中显示 */
+.container {
+    max-width: 1100px;
+    margin: 0 auto;           /* 水平居中 */
+    display: flex;
+    flex-direction: column;   /* 子元素纵向排列 */
+    gap: 18px;
+}
+
+/* .layout: 算法页面的双栏布局（左侧320px控制面板 + 右侧自适应可视化区域） */
+.layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;  /* 左固定宽度，右自适应 */
+    gap: 18px;
+}
+
+/* ---------- Panel / Card （面板与卡片组件） ---------- */
+/* .panel: 大容器面板，用于侧边栏、主内容区等，带玻璃拟态效果 */
+.panel {
+    background: linear-gradient(180deg, rgba(255,255,255,0.025), rgba(255,255,255,0.01));
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    padding: 18px;
+    box-shadow: var(--shadow);
+}
+
+/* 侧边栏面板滚动时固定在顶部（sticky定位） */
+.sidebar .panel {
+    position: sticky;
+    top: 24px;
+}
+
+/* .card: 小型卡片组件，悬停时上浮效果 */
+.card {
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius);
+    padding: 16px;
+    transition: transform var(--transition), box-shadow var(--transition);
+}
+.card:hover {
+    transform: translateY(-2px);  /* 悬停上浮2px */
+    box-shadow: var(--shadow);
+}
+
+/* ---------- Homepage Algorithm Cards （首页算法选择卡片） ---------- */
+/* .algo-grid: 首页三个算法入口的网格容器，自动适应列数 */
+.algo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* 每列最小280px，自动换行 */
+    gap: 18px;
+}
+
+/* .algo-card: 单个算法入口卡片，点击跳转到对应算法页面 */
+.algo-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 20px;
+    background: linear-gradient(160deg, rgba(255,255,255,0.03), transparent);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    transition: all var(--transition);
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+}
+.algo-card:hover {
+    border-color: var(--accent);           /* 悬停时边框变蓝 */
+    transform: translateY(-3px);           /* 上浮3px */
+    box-shadow: 0 12px 32px rgba(59,130,246,0.15); /* 蓝色光晕阴影 */
+}
+.algo-card .algo-icon {                    /* 算法图标容器 */
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    background: rgba(59,130,246,0.1);
+}
+.algo-card .algo-title {                   /* 算法名称 */
+    font-weight: 700;
+    font-size: 1.05rem;
+}
+.algo-card .algo-desc {                    /* 算法简介说明 */
+    color: var(--muted);
+    font-size: 0.88rem;
+    line-height: 1.5;
+}
+
+/* ---------- Controls / Toolbar （控制区 / 工具栏） ---------- */
+/* .controls: 侧边栏的控制组容器，纵向排列各控件 */
+.controls {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* .row: 水平排列的一行元素 */
+.row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+.row.wrap { flex-wrap: wrap; }  /* 允许换行 */
+/* .space-between: 两端对齐的flex容器 */
+.space-between {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* .toolbar: 工具栏容器（如播放控制按钮组） */
+.toolbar {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    padding: 8px 12px;
+    background: var(--glass);
+    border-radius: var(--radius);
+    border: 1px solid var(--glass-border);
+}
+
+/* ---------- Buttons （按钮系统） ---------- */
+/* .btn: 基础按钮样式 — 所有按钮的通用样式 */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;                       /* 图标与文字间距 */
+    padding: 8px 14px;
+    border-radius: var(--radius);
+    border: 1px solid transparent;
+    background: var(--glass);
+    color: inherit;
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: all var(--transition);
+    white-space: nowrap;            /* 文字不换行 */
+    user-select: none;              /* 防止误选中文字 */
+}
+.btn:hover { background: rgba(255,255,255,0.08); }   /* 悬停加亮 */
+.btn:active { transform: translateY(1px); }          /* 按下下沉 */
+.btn:disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; } /* 禁用态 */
+
+/* .btn-primary: 主要操作按钮（蓝→青渐变，深色文字） */
+.btn-primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    border: none;
+    color: #02122a;
+    font-weight: 600;
+}
+.btn-primary:hover { opacity: 0.9; }
+
+/* .btn-ghost: 幽灵按钮（透明背景，仅边框） */
+.btn-ghost {
+    background: transparent;
+    border: 1px solid var(--glass-border);
+}
+.btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+/* .btn-danger: 危险操作按钮（红色，如删除、重置） */
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-danger:hover { opacity: 0.9; }
+
+/* .btn-success: 成功/确认按钮（绿色） */
+.btn-success { background: var(--success); color: #02122a; }
+
+/* 按钮尺寸变体 */
+.btn-sm { padding: 5px 10px; font-size: 0.82rem; }   /* 小按钮 */
+.btn-lg { padding: 10px 20px; font-size: 1rem; }     /* 大按钮 */
+
+/* .btn-icon: 纯图标圆形按钮（如播放/暂停按钮） */
+.btn-icon {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+/* ---------- Form Inputs （表单输入框样式） ---------- */
+/* 统一所有输入类元素的样式：数字框、文本框、下拉框、文本域 */
+input[type="number"],
+input[type="text"],
+select,
+textarea,
+.text-input {
+    width: 100%;
+    padding: 9px 12px;
+    border-radius: var(--radius);
+    border: 1px solid var(--glass-border);
+    background: rgba(0,0,0,0.2);          /* 半透明深色背景 */
+    color: inherit;
+    font-family: inherit;
+    font-size: 0.9rem;
+    transition: border-color var(--transition);
+}
+/* 聚焦时边框变蓝 + 蓝色外发光，提示用户当前焦点位置 */
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
+}
+textarea { resize: vertical; min-height: 80px; } /* 文本域只能垂直拉伸 */
+
+/* 表单标签 */
+label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 4px;
+}
+
+/* .input-group: 标签+输入框+提示的组合容器 */
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* 输入提示文字（灰色小字） */
+.input-hint {
+    font-size: 0.78rem;
+    color: var(--muted);
+}
+
+/* 输入错误提示（红色小字） */
+.input-error {
+    font-size: 0.78rem;
+    color: var(--danger);
+}
+
+/* ---------- Test Cases （测试用例列表） ---------- */
+/* 用于展示预设/自定义测试数据的列表 */
+.testcase-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+/* 每一条测试用例 */
+.testcase-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    border-radius: var(--radius);
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--glass-border);
+    cursor: pointer;
+    transition: all var(--transition);
+}
+.testcase-item:hover { border-color: var(--accent); }
+/* 当前选中的测试用例高亮 */
+.testcase-item.active {
+    border-color: var(--accent);
+    background: rgba(59,130,246,0.06);
+}
+
+/* ---------- Canvas / Visualization Area （画布 / 可视化主区域） ---------- */
+/* .canvas-wrapper: 包裹整个可视化区域的外层容器 */
+.canvas-wrapper {
+    background: linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.005));
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    min-height: 420px;              /* 最小高度保证可视化区域足够大 */
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* .canvas-stage: Canvas画布的直接容器，居中显示画布 */
+.canvas-stage {
+    flex: 1;                        /* 占据剩余空间 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(2,6,23,0.4);   /* 画布区域更深的背景，与面板区分 */
+    border-radius: var(--radius);
+    overflow: hidden;
+    position: relative;
+}
+.canvas-stage canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* 算法标题栏（标题 + 右侧操作按钮） */
+.algo-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.algo-title { font-weight: 700; font-size: 1.05rem; }
+
+/* ---------- Playback Controls （播放控制条） ---------- */
+/* 包含：上一步、播放/暂停、下一步、进度条、速度控制 */
+.playback-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius);
+}
+
+/* 进度条轨道 */
+.playback-bar .progress {
+    flex: 1;                       /* 自适应占据剩余宽度 */
+    height: 4px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 2px;
+    position: relative;
+    cursor: pointer;
+}
+/* 进度条已完成部分（蓝色填充） */
+.playback-bar .progress-fill {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.1s linear; /* 宽度变化平滑过渡 */
+}
+
+/* 速度调节控件 */
+.speed-control {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.82rem;
+    color: var(--muted);
+}
+.speed-control input[type="range"] {
+    width: 80px;
+    accent-color: var(--accent);   /* 滑块强调色 */
+}
+
+/* 步骤计数器显示（如 "Step 3/15"） */
+.step-counter {
+    font-size: 0.82rem;
+    color: var(--muted);
+    font-family: var(--mono);
+}
+
+/* ---------- Step Log （步骤日志面板） ---------- */
+/* 显示算法每一步执行的文字说明，可滚动查看历史记录 */
+.step-log {
+    margin-top: 12px;
+    max-height: 180px;              /* 限制最大高度，超出后出现滚动条 */
+    overflow-y: auto;
+    padding: 12px;
+    border-radius: var(--radius);
+    background: rgba(0,0,0,0.2);
+    font-family: var(--mono);       /* 等宽字体，类终端风格 */
+    font-size: 0.82rem;
+    line-height: 1.6;
+    border: 1px solid var(--glass-border);
+}
+/* 单条日志条目 */
+.step-log .log-entry {
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+.step-log .log-entry:last-child { border-bottom: none; }
+/* 步骤序号（蓝色显示） */
+.step-log .log-entry .step-num {
+    color: var(--accent);
+    margin-right: 8px;
+}
+/* 关键信息高亮（橙色加粗） */
+.step-log .highlight { color: var(--warning); font-weight: 600; }
+
+/* ---------- Complexity Info （时间/空间复杂度展示区） ---------- */
+/* 显示当前算法的时间复杂度和空间复杂度 */
+.complexity {
+    display: flex;
+    gap: 16px;
+    padding: 12px;
+    border-radius: var(--radius);
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--glass-border);
+    font-size: 0.85rem;
+}
+/* 单项复杂度（如"时间复杂度: O(n log n)"） */
+.complexity-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.complexity-item .label { color: var(--muted); font-size: 0.78rem; }  /* 标签：灰色小字 */
+.complexity-item .value { font-family: var(--mono); color: var(--accent); } /* 值：蓝色等宽字体 */
+
+/* ---------- Data Display （数据展示区） ---------- */
+/* 用于显示当前输入数据、排序结果等 */
+.data-display {
+    padding: 10px 12px;
+    background: rgba(0,0,0,0.15);
+    border-radius: var(--radius);
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    overflow-x: auto;               /* 数据过长时水平滚动 */
+    border: 1px solid var(--glass-border);
+}
+
+/* .meta: 辅助信息行（如数据量、耗时等） */
+.meta {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+/* ---------- Algorithm-Specific Visual Elements （各算法专用视觉元素） ---------- */
+
+/* === 快速排序 - 柱状图 === */
+/* .bar: 代表数组中一个元素的柱条 */
+.bar {
+    background: linear-gradient(180deg, var(--accent), var(--accent-2)); /* 默认蓝→青渐变 */
+    border-radius: 4px 4px 0 0;   /* 只有顶部圆角 */
+    transition: height var(--transition), background var(--transition);
+}
+.bar.comparing { background: var(--warning); }  /* 正在比较的元素 - 橙色 */
+.bar.swapping { background: var(--danger); }    /* 正在交换的元素 - 红色 */
+.bar.sorted { background: var(--success); }     /* 已排好序的元素 - 绿色 */
+.bar.pivot { background: #a855f7; }             /* 基准元素(pivot) - 紫色 */
+
+/* === Dijkstra最短路径 - 图节点 === */
+/* .node: 图中的一个节点（圆形） */
+.node {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;             /* 圆形 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.04);
+    border: 2px solid rgba(255,255,255,0.1);
+    color: var(--muted);
+    font-size: 0.82rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+.node.active {                      /* 当前正在处理的节点 - 蓝色 + 发光 */
+    background: var(--accent);
+    color: #02122a;
+    border-color: var(--accent);
+    box-shadow: 0 0 12px rgba(59,130,246,0.4);
+}
+.node.visited {                     /* 已访问过的节点 - 橙色 */
+    background: var(--warning);
+    color: #02122a;
+    border-color: var(--warning);
+}
+.node.shortest {                    /* 最短路径上的节点 - 绿色 */
+    background: var(--success);
+    color: #02122a;
+    border-color: var(--success);
+}
+
+/* === 汉诺塔 - 柱子和圆盘 === */
+/* .hanoi-peg: 一根柱子，圆盘从底部向上堆叠 */
+.hanoi-peg {
+    display: flex;
+    flex-direction: column-reverse; /* 从下往上排列圆盘 */
+    align-items: center;
+    gap: 2px;
+    position: relative;
+}
+/* 柱子的杆（伪元素实现） */
+.hanoi-peg::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    width: 4px;
+    height: 100%;
+    background: rgba(255,255,255,0.1);
+    border-radius: 2px;
+}
+/* .disc: 圆盘（宽度由JS动态设置，代表不同大小） */
+.disc {
+    height: 20px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+/* 正在移动的圆盘 - 添加发光阴影 */
+.disc.moving {
+    box-shadow: 0 4px 12px rgba(59,130,246,0.4);
+}
+
+/* ---------- Badges / Tags （徽章/标签） ---------- */
+/* 用于状态标记，如"排序中"、"已完成"等小标签 */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 999px;           /* 胶囊形状 */
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+.badge-info { background: rgba(59,130,246,0.15); color: var(--accent); }       /* 信息-蓝 */
+.badge-success { background: rgba(34,197,94,0.15); color: var(--success); }    /* 成功-绿 */
+.badge-warning { background: rgba(245,158,11,0.15); color: var(--warning); }   /* 警告-橙 */
+.badge-danger { background: rgba(239,68,68,0.15); color: var(--danger); }      /* 危险-红 */
+
+/* ---------- Tooltip （工具提示） ---------- */
+/* 鼠标悬停在元素上时显示的小提示框，通过 data-tip 属性设置提示内容 */
+/* 使用方式：<button class="tooltip" data-tip="点击开始">▶</button> */
+.tooltip {
+    position: relative;
+}
+.tooltip::after {
+    content: attr(data-tip);         /* 从HTML的data-tip属性获取文字 */
+    position: absolute;
+    bottom: calc(100% + 6px);        /* 显示在元素上方 */
+    left: 50%;
+    transform: translateX(-50%) scale(0.9);
+    padding: 5px 10px;
+    border-radius: 6px;
+    background: #1e293b;
+    color: #e6eef8;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    opacity: 0;                      /* 默认隐藏 */
+    pointer-events: none;
+    transition: all var(--transition);
+}
+.tooltip:hover::after {              /* 悬停时显示 */
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+}
+
+/* ---------- Modal / Dialog （模态框/对话框） ---------- */
+/* 用于确认操作、输入数据等弹窗场景 */
+/* .modal-overlay: 全屏遮罩层（半透明黑 + 模糊），默认隐藏 */
+.modal-overlay {
+    position: fixed;
+    inset: 0;                       /* 上下左右都为0，覆盖全屏 */
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);     /* 背景模糊效果 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;           /* 隐藏时不阻挡点击 */
+    transition: opacity var(--transition);
+}
+/* 通过JS添加 .visible 类来显示模态框 */
+.modal-overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+/* .modal: 模态框内容区 */
+.modal {
+    background: var(--panel);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    max-width: 480px;
+    width: 90%;
+    box-shadow: 0 24px 48px rgba(0,0,0,0.4);
+}
+.modal-title {
+    font-weight: 700;
+    font-size: 1.1rem;
+    margin-bottom: 12px;
+}
+
+/* ---------- Toast / Notification （消息提示条） ---------- */
+/* 用于操作反馈，如"数据已加载"、"输入格式错误"等，固定在右上角 */
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+/* 单条提示消息 */
+.toast {
+    padding: 12px 18px;
+    border-radius: var(--radius);
+    background: #1e293b;
+    border: 1px solid var(--glass-border);
+    color: #e6eef8;
+    font-size: 0.88rem;
+    box-shadow: var(--shadow);
+    animation: slideIn 0.3s ease;    /* 从右侧滑入 */
+}
+/* 不同类型的提示通过左侧色条区分 */
+.toast.toast-success { border-left: 3px solid var(--success); }  /* 成功-绿色 */
+.toast.toast-error { border-left: 3px solid var(--danger); }     /* 错误-红色 */
+.toast.toast-info { border-left: 3px solid var(--accent); }      /* 信息-蓝色 */
+
+/* ---------- Utilities （工具类 - 快捷样式） ---------- */
+/* 可直接加在HTML元素上，快速设置常用样式，避免写内联style */
+.muted { color: var(--muted); }             /* 灰色文字 */
+.small { font-size: 0.85rem; }              /* 小号字体 */
+.text-center { text-align: center; }        /* 文字居中 */
+.text-mono { font-family: var(--mono); }    /* 等宽字体 */
+.flex { display: flex; }                    /* 弹性布局 */
+.flex-col { flex-direction: column; }       /* 纵向排列 */
+.flex-1 { flex: 1; }                       /* 占满剩余空间 */
+.items-center { align-items: center; }      /* 交叉轴居中 */
+.justify-center { justify-content: center; }/* 主轴居中 */
+.gap-4 { gap: 4px; }                       /* 间距4px */
+.gap-8 { gap: 8px; }                       /* 间距8px */
+.gap-12 { gap: 12px; }                     /* 间距12px */
+.gap-16 { gap: 16px; }                     /* 间距16px */
+.mt-8 { margin-top: 8px; }                 /* 上外边距8px */
+.mt-12 { margin-top: 12px; }               /* 上外边距12px */
+.mt-16 { margin-top: 16px; }               /* 上外边距16px */
+.mb-8 { margin-bottom: 8px; }              /* 下外边距8px */
+.hidden { display: none !important; }       /* 强制隐藏元素 */
+
+/* ---------- Scrollbar （自定义滚动条样式 - Webkit浏览器） ---------- */
+::-webkit-scrollbar { width: 6px; height: 6px; }           /* 滚动条宽度6px */
+::-webkit-scrollbar-track { background: transparent; }      /* 轨道透明 */
+::-webkit-scrollbar-thumb {                                 /* 滑块 */
+    background: rgba(255,255,255,0.1);
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+/* ---------- Animations （动画关键帧定义） ---------- */
+/* slideIn: 从右侧滑入（用于toast消息提示） */
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+/* fadeIn: 淡入效果 */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+/* pulse: 脉冲闪烁（用于加载状态提示） */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+/* bounce: 上下弹跳（用于引导注意） */
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+}
+
+/* 动画工具类 - 加在元素上即可触发动画 */
+.animate-fade { animation: fadeIn 0.3s ease; }
+.animate-pulse { animation: pulse 1.5s infinite; }
+
+/* ---------- Footer （页脚） ---------- */
+footer {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid var(--glass-border);  /* 上边线分隔 */
+    color: var(--muted);
+    font-size: 0.82rem;
+    text-align: center;
+}
+
+/* ---------- Accessibility （无障碍访问 - 键盘焦点样式） ---------- */
+/* 当用户通过键盘Tab键导航时，显示蓝色焦点轮廓，提升可访问性 */
+a:focus-visible,
+.btn:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: 2px solid rgba(59,130,246,0.4);
+    outline-offset: 2px;
+}
+
+/* ---------- Responsive （响应式布局 - 适配不同屏幕） ---------- */
+/* 平板设备（<=980px）：双栏变单栏 */
+@media (max-width: 980px) {
+    .layout {
+        grid-template-columns: 1fr;             /* 取消左右分栏，变为单列 */
+    }
+    .sidebar .panel {
+        position: relative;                     /* 取消sticky固定 */
+        top: auto;
+    }
+}
+
+/* 手机设备（<=640px）：进一步简化布局 */
+@media (max-width: 640px) {
+    body { padding: 12px; }                     /* 减小页面内边距 */
+    .site-header { flex-direction: column; align-items: flex-start; gap: 10px; } /* 顶栏纵向排列 */
+    .algo-grid { grid-template-columns: 1fr; }  /* 算法卡片单列 */
+    .playback-bar { flex-wrap: wrap; }          /* 播放条允许换行 */
+    .complexity { flex-direction: column; gap: 8px; } /* 复杂度信息纵向排列 */
+}
