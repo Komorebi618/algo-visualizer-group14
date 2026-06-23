@@ -4,11 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>算法可视化系统</title>
+    <!-- 引入公共样式表，所有页面共用同一套 CSS 变量和组件类 -->
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <div class="container">
 
+        <!-- 顶部导航：品牌 Logo + 页面跳转链接，active 类标记当前页 -->
         <header class="site-header">
             <div class="brand">
                 <div class="logo">A</div>
@@ -22,7 +24,7 @@
             </nav>
         </header>
 
-        <!-- 简介 -->
+        <!-- 系统简介区 -->
         <div class="panel" style="text-align:center;padding:32px 24px">
             <h2 style="font-size:1.6rem;font-weight:700;margin-bottom:10px">算法过程可视化系统</h2>
             <p class="muted" style="max-width:520px;margin:0 auto;line-height:1.7">
@@ -31,9 +33,14 @@
             </p>
         </div>
 
-        <!-- 算法卡片 -->
+        <!--
+            算法入口卡片网格
+            .algo-grid 使用 CSS Grid auto-fit 自动排列，窗口变窄时自动换行
+            每张卡片是一个 <a> 标签，点击直接跳转到对应算法页面
+        -->
         <div class="algo-grid">
 
+            <!-- 快速排序卡片 -->
             <a href="pages/quicksort.html" class="algo-card">
                 <div class="algo-icon">↕</div>
                 <div class="algo-title">快速排序</div>
@@ -41,12 +48,14 @@
                     基于分治思想的高效排序算法。选取基准元素，将数组划分为两部分后递归排序，
                     通过柱状图动画展示每一步比较与交换。
                 </div>
+                <!-- badge 标签展示算法复杂度，颜色区分平均/最坏情况 -->
                 <div class="row" style="gap:6px;margin-top:4px">
                     <span class="badge badge-info">O(n log n)</span>
                     <span class="badge badge-warning">最坏 O(n²)</span>
                 </div>
             </a>
 
+            <!-- Dijkstra 最短路径卡片 -->
             <a href="pages/dijkstra.html" class="algo-card">
                 <div class="algo-icon">⬡</div>
                 <div class="algo-title">Dijkstra 最短路径</div>
@@ -59,6 +68,7 @@
                 </div>
             </a>
 
+            <!-- 汉诺塔卡片 -->
             <a href="pages/hanoi.html" class="algo-card">
                 <div class="algo-icon">⊟</div>
                 <div class="algo-title">汉诺塔</div>
