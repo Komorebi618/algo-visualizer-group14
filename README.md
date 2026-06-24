@@ -9,7 +9,7 @@ algo-visualizer-group14/
 ├── css/
 │   └── style.css           # 公共样式（孙郭昕负责详细内容）
 ├── js/
-│   ├── common.js           # 公共工具库（杨帆负责详细内容）
+│   ├── common.js           # 公共工具库（杨帆负责详细内容）：统一 DOM 操作、测试用例加载、步骤管理、输入解析与随机数据生成
 │   ├── quicksort.js        # 快速排序逻辑+可视化（孙郭昕）
 │   ├── dijkstra.js         # Dijkstra 逻辑+可视化（刘卓明）
 │   └── hanoi.js            # 汉诺塔逻辑+可视化（杨帆）
