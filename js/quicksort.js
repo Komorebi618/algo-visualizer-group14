@@ -15,6 +15,14 @@
  *   - 扫描结束后将 pivot（arr[high]）与 arr[i+1] 交换，pivot 落位完成
  *   - 递归处理 [low, pivotIdx-1] 和 [pivotIdx+1, high] 两个子数组
  */
+
+/**
+ * TODO:
+ * 1. 没有预置的测试用例
+ * 2. 载入用例不知道如何使用；随机按钮没有反应
+ * 3. 手动输入数组后，点击开始排序没有反应
+ */
+
 const QuickSort = (() => {
 
     /* ───────────────────────────────────────────
@@ -408,12 +416,13 @@ const QuickSort = (() => {
         }
 
         /**
-         * 停止自动播放：清除定时器、重置状态、恢复按钮文字。
-         * 同时调用 manager.pause() 确保 StepManager 内部状态也停止。
+         * 停止自动播放：调用 StepManager 的 pause 清掉其内部 setTimeout 链，
+         * 并同步本地 UI 状态（按钮文字、isPlaying 标志）。
+         * 注意：必须调用 manager.pause()，否则 StepManager 的 _advance 会继续递归推进。
          */
         function stopPlay() {
             isPlaying = false;
-            clearTimeout(playTimer);
+            manager.pause();           // 关键：清掉 StepManager 内部的 timer
             btnPlay.textContent = "▶ 播放";
         }
 
@@ -554,13 +563,18 @@ const QuickSort = (() => {
             if (isPlaying) {
                 stopPlay();
             } else {
-                // 若已在最后一步，从头开始播放（重置 currentIndex 为 -1，next() 会移到 0）
+                // 若已在最后一步，从头开始播放（重置到 -1，_advance 内会先 next() 到 0）
                 if (manager.currentIndex >= steps.length - 1) {
                     manager.currentIndex = -1;
                 }
                 isPlaying = true;
                 btnPlay.textContent = "⏸ 暂停";
-                manager.play(getSpeedMs()); // StepManager 内部用 setTimeout 递归推进
+                // 直接调用 _advance：StepManager.play() 在 isPlaying=true 时会被 guard 提前返回，
+                // 这里我们已经把 isPlaying 置为 true 用于 UI，但 manager 内部的 isPlaying 还是 false。
+                // 同步设置 manager.isPlaying = true 后再 _advance 推进，保证可以连续暂停-播放。
+                manager.speed = Math.max(50, getSpeedMs());
+                manager.isPlaying = true;
+                manager._advance();
             }
         });
 
@@ -579,8 +593,10 @@ const QuickSort = (() => {
         speedSlider.addEventListener("input", () => {
             speedLabel.textContent = speedSlider.value;
             if (isPlaying) {
-                manager.pause();               // 暂停当前 timer
-                manager.play(getSpeedMs());    // 以新速度重新启动
+                manager.pause();                          // 清当前 timer
+                manager.speed = Math.max(50, getSpeedMs());
+                manager.isPlaying = true;
+                manager._advance();                       // 以新速度恢复推进
             }
         });
 
