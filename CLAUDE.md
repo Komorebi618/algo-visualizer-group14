@@ -295,3 +295,51 @@ test: 增加汉诺塔测试用例
 - [ ] AC-8：README.md 包含运行方式、算法说明、输入格式、测试方式
 - [ ] AC-9：非法输入有明确提示且系统不崩溃
 - [ ] AC-10：Chrome / Edge / Firefox 三种浏览器均可正常运行
+
+---
+
+## 附录：common.js 实际实现与设计稿的偏差（2026-06-24 校对）
+
+> ⚠️ 上文“公共工具库接口规约”为最初设计稿，与当前 `js/common.js` 的实际实现存在较多差异。编写算法模块时请以本附录为准。汉诺塔模块（`js/hanoi.js`）已按本附录调用。
+
+### 命名空间总览
+
+实际只暴露 `window.Common`，**没有** `CanvasHelper` / `Validator` / `DataGenerator` / `Logger` 这四个独立命名空间。设计稿中归属这些命名空间的方法，要么并入 `Common`（如 `parseNumberArray`、`randomIntegerArray`、`randomGraph`），要么完全没有实现（见下表“未实现”行）。
+
+### Common 实际暴露的方法
+
+| 类别 | 实际签名 | 与设计稿差异 |
+|------|----------|--------------|
+| DOM | `Common.$(sel)`、`Common.$$(sel)` | 设计稿未列出 |
+| DOM | `Common.createElement(tag, attrs?, text?)`、`Common.clearChildren(el)`、`Common.addEvent(target, event, handler)` | 设计稿未列出 |
+| 解析 | `Common.parseNumberArray(str)` —— 失败抛错，**不返回 `{ok, value, error}`** | 与设计稿 `Validator.parseNumberArray` 行为不同；**没有 `parsePositiveInteger`**，整数校验需算法模块自己写 |
+| 格式化 | `Common.formatNumberArray(arr)` | 设计稿未列出 |
+| 随机 | `Common.randomIntegerArray(len, min, max)` | 设计稿叫 `DataGenerator.randomArray`；**没有 `randomHanoiInput`** |
+| 随机 | `Common.randomGraph({ nodeCount, edgeProbability, minWeight, maxWeight })` | 参数为 options 对象而非位置参数 |
+| 工具 | `Common.cloneMatrix(matrix)`、`Common.deepClone(value)` | 设计稿未列出（算法模块录步时需自行 `deepClone`） |
+| 提示 | `Common.showInfo(selector, msg)`、`Common.showError(selector, msg)` | 设计稿未列出 |
+| 测试用例 | `Common.populateTestcaseSelect(selectEl, cases, formatter?)`、`Common.getSelectedTestcase(selectEl, cases)` | 设计稿未列出 |
+| StepManager | `new Common.StepManager({ onStep, onPlayEnd })` —— **构造参数为 options 对象**，不是 `(renderFn, descUpdateFn)` | 与设计稿差异较大，详见下表 |
+| **未实现** | `CanvasHelper`、`Validator`、`Logger`、`DataGenerator.randomHanoiInput`、`StepManager.record`、`StepManager.clear`、`StepManager.gotoStep`、`StepManager.setSpeed` | 设计稿声称提供，实际无 —— 不要调用 |
+
+### StepManager 实际方法
+
+| 方法 | 实际签名 | 说明 |
+|------|----------|------|
+| 构造 | `new StepManager({ onStep: (step, idx) => {}, onPlayEnd: () => {} })` | 回调以 `step` 整体（含 state + description）传入，由调用方决定结构 |
+| `addStep(step)` | 入队一个步骤；**不会自动 deepClone**，算法模块自己保证快照独立 |
+| `setSteps(steps)` | 替换整段步骤序列并重置 `currentIndex = -1`（相当于设计稿里的 `clear` —— `setSteps([])` 即清空） |
+| `getCurrentStep()` | 返回当前步骤或 `null` |
+| `next()` / `prev()` | 前后切换并触发 `onStep` |
+| `reset()` | 暂停 + `currentIndex = -1` + 触发 `onStep(null, -1)`；**不清空 steps** |
+| `play(speed = 500)` | 自动播放；**默认 500ms 而非 800ms**；返回 `void`（不是 Promise） |
+| `pause()` | 暂停 |
+| 字段 | `steps[]`、`currentIndex`（-1）、`isPlaying`、`speed`（默认 500） | 可直接读取，已被汉诺塔模块用于 `btnLast` 跳末尾等场景 |
+
+### 算法模块调用约定（汉诺塔已采纳）
+
+- 录步格式 `{ state, description }`；调用 `addStep` 前自行 `Common.deepClone(state)`。
+- 重置 = `pause()` + `setSteps([])`，再按需重绘空画布。
+- 不存在 `gotoStep(i)`，跳到任意帧需要直接写 `sm.currentIndex = i` 后手动重绘（或循环 `next()`）。
+- 整数/范围校验需要在算法模块内自己实现，不能依赖 `Validator`。
+- Canvas 绘制要直接调用原生 `ctx` API，不能依赖 `CanvasHelper`。

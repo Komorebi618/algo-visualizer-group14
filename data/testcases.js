@@ -50,14 +50,24 @@ window.Testcases = {
     ],
     hanoi: [
         {
+            name: "1 个盘子",
+            disks: 1,
+            description: "边界：最小规模，单盘直接从 A 柱移动到 C 柱，仅 1 步。"
+        },
+        {
             name: "3 个盘子",
             disks: 3,
-            description: "经典汉诺塔问题，演示盘子从起始柱到目标柱的移动过程。"
+            description: "经典汉诺塔问题，演示盘子从起始柱到目标柱的移动过程，共 7 步。"
         },
         {
             name: "4 个盘子",
             disks: 4,
-            description: "增加盘子数量，展示递归深度和移动步数增长。"
+            description: "增加盘子数量，展示递归深度和移动步数增长，共 15 步。"
+        },
+        {
+            name: "6 个盘子",
+            disks: 6,
+            description: "规模：观察 2^n - 1 步指数增长，共 63 步，递归深度明显加深。"
         }
     ]
 };
