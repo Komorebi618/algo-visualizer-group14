@@ -4,35 +4,86 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>算法可视化系统</title>
+    <!-- 引入公共样式表，所有页面共用同一套 CSS 变量和组件类 -->
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <header class="site-header">
-        <div class="brand">
-            <div class="logo">⚙</div>
-            <span class="title">算法可视化系统</span>
-        </div>
-    </header>
+    <div class="container">
 
-    <main class="container">
-        <h2 style="color: var(--muted); font-weight: 400; margin-bottom: 32px;">选择一个算法开始</h2>
-        <div class="algo-grid">
-            <a class="algo-card" href="pages/quicksort.html">
+        <!-- 顶部导航：品牌 Logo + 页面跳转链接，active 类标记当前页 -->
+        <header class="site-header">
+            <div class="brand">
+                <div class="logo">⚙</div>
+                <span class="title">算法可视化系统</span>
+            </div>
+            <nav class="nav-links">
+                <a href="index.html" class="active">首页</a>
+                <a href="pages/quicksort.html">快速排序</a>
+                <a href="pages/dijkstra.html">Dijkstra</a>
+                <a href="pages/hanoi.html">汉诺塔</a>
+            </nav>
+        </header>
+
+        <!-- 系统简介区 -->
+        <div class="panel" style="text-align:center;padding:32px 24px">
+            <h2 style="font-size:1.6rem;font-weight:700;margin-bottom:10px">算法过程可视化系统</h2>
+            <p class="muted" style="max-width:520px;margin:0 auto;line-height:1.7">
+                选择下方的算法，通过动画逐步观察每一步的数据变化、关键状态和执行逻辑。
+                支持预置测试用例、手动输入及随机数据生成。
+            </p>
+        </div>
+
+        <!--
+            算法入口卡片网格
+            .algo-grid 使用 CSS Grid auto-fit 自动排列，窗口变窄时自动换行
+            每张卡片是一个 <a> 标签，点击直接跳转到对应算法页面
+        -->
+        <main class="algo-grid">
+
+            <!-- 快速排序卡片 -->
+            <a href="pages/quicksort.html" class="algo-card">
                 <div class="algo-icon">▦</div>
                 <div class="algo-title">快速排序</div>
-                <div class="algo-desc">柱状图交换动画，O(n log n) 平均时间复杂度</div>
+                <div class="algo-desc">
+                    基于分治思想的高效排序算法。选取基准元素，将数组划分为两部分后递归排序，
+                    通过柱状图动画展示每一步比较与交换。
+                </div>
+                <!-- badge 标签展示算法复杂度，颜色区分平均/最坏情况 -->
+                <div class="row" style="gap:6px;margin-top:4px">
+                    <span class="badge badge-info">O(n log n)</span>
+                    <span class="badge badge-warning">最坏 O(n²)</span>
+                </div>
             </a>
-            <a class="algo-card" href="pages/dijkstra.html">
+
+            <!-- Dijkstra 最短路径卡片 -->
+            <a href="pages/dijkstra.html" class="algo-card">
                 <div class="algo-icon">◎</div>
                 <div class="algo-title">Dijkstra 最短路径</div>
-                <div class="algo-desc">节点图逐步染色，求单源最短路径</div>
+                <div class="algo-desc">
+                    经典图论算法，在带权有向图中求单源最短路径。
+                    通过节点逐步染色展示距离更新过程与最短路径的确定。
+                </div>
+                <div class="row" style="gap:6px;margin-top:4px">
+                    <span class="badge badge-info">O((V+E) log V)</span>
+                </div>
             </a>
-            <a class="algo-card" href="pages/hanoi.html">
+
+            <!-- 汉诺塔卡片 -->
+            <a href="pages/hanoi.html" class="algo-card">
                 <div class="algo-icon">≡</div>
                 <div class="algo-title">汉诺塔</div>
-                <div class="algo-desc">圆盘递归移动，O(2ⁿ) 步骤可视化</div>
+                <div class="algo-desc">
+                    经典递归问题。将 N 个盘子从起始柱借助辅助柱全部移至目标柱，
+                    动画展示每一步盘子的移动和递归调用过程。
+                </div>
+                <div class="row" style="gap:6px;margin-top:4px">
+                    <span class="badge badge-info">O(2ⁿ)</span>
+                </div>
             </a>
-        </div>
-    </main>
+
+        </main>
+
+        <footer>算法可视化系统 &copy; 2026 &nbsp;|&nbsp; 第14组 &nbsp;|&nbsp; 刘卓明 &middot; 杨帆 &middot; 孙郭昕</footer>
+    </div>
 </body>
 </html>
