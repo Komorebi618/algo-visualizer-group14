@@ -1,12 +1,38 @@
 <!DOCTYPE html>
-<html lang="zh-cn">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>算法可视化系统</title>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <h1>Hello~ 课设！</h1>
-    <!-- 从这里开始建立骨架 -->
+    <header class="site-header">
+        <div class="brand">
+            <div class="logo">⚙</div>
+            <span class="title">算法可视化系统</span>
+        </div>
+    </header>
+
+    <main class="container">
+        <h2 style="color: var(--muted); font-weight: 400; margin-bottom: 32px;">选择一个算法开始</h2>
+        <div class="algo-grid">
+            <a class="algo-card" href="pages/quicksort.html">
+                <div class="algo-icon">▦</div>
+                <div class="algo-title">快速排序</div>
+                <div class="algo-desc">柱状图交换动画，O(n log n) 平均时间复杂度</div>
+            </a>
+            <a class="algo-card" href="pages/dijkstra.html">
+                <div class="algo-icon">◎</div>
+                <div class="algo-title">Dijkstra 最短路径</div>
+                <div class="algo-desc">节点图逐步染色，求单源最短路径</div>
+            </a>
+            <a class="algo-card" href="pages/hanoi.html">
+                <div class="algo-icon">≡</div>
+                <div class="algo-title">汉诺塔</div>
+                <div class="algo-desc">圆盘递归移动，O(2ⁿ) 步骤可视化</div>
+            </a>
+        </div>
+    </main>
 </body>
 </html>

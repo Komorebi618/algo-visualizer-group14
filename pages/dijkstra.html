@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dijkstra 最短路径 — 算法可视化系统</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<!-- 
+#TODO:
+1. 用更方便的方式设置边列表
+2. 添加“预览”功能，可以在不运行的情况下看到根据设置的数据生成的图像样式
+3. “最短路径结果”版面有一层灰色蒙版，并且左右溢出贯穿了整个页面
+-->
+<body>
+  <header class="site-header">
+    <a class="brand" href="../index.html" style="text-decoration:none;color:inherit;">
+      <div class="logo">⚙</div>
+      <span class="title">算法可视化系统</span>
+    </a>
+  </header>
+
+  <div class="container">
+    <div class="layout">
+
+      <!-- 左侧控制面板 -->
+      <aside class="sidebar">
+        <div class="panel">
+          <h3 style="margin:0 0 16px;font-size:1rem;">输入数据</h3>
+
+          <div class="controls">
+            <div class="input-group">
+              <label for="nodeCount">节点数（2 ~ 10）</label>
+              <input type="number" id="nodeCount" min="2" max="10" value="5">
+            </div>
+
+            <div class="input-group">
+              <label for="sourceNode">源节点</label>
+              <select id="sourceNode"></select>
+            </div>
+
+            <div class="input-group">
+              <label for="edgeList">边列表</label>
+              <textarea id="edgeList" rows="6"
+                placeholder="起点 终点 权重，每行一条&#10;例：0 1 4&#10;    0 2 1"></textarea>
+            </div>
+
+            <div class="row">
+              <button class="btn btn-ghost" id="btnRandom">随机生成</button>
+              <button class="btn btn-primary" id="btnRun">▶ 运行</button>
+            </div>
+          </div>
+
+          <hr style="border:none;border-top:1px solid var(--glass-border);margin:16px 0;">
+
+          <h3 style="margin:0 0 12px;font-size:1rem;">测试用例</h3>
+          <div class="testcase-list" id="testcaseList"></div>
+
+          <hr style="border:none;border-top:1px solid var(--glass-border);margin:16px 0;">
+
+          <div class="complexity">
+            <div class="complexity-item">
+              <span class="label">时间复杂度</span>
+              <span class="value">O(V²)</span>
+            </div>
+            <div class="complexity-item">
+              <span class="label">空间复杂度</span>
+              <span class="value">O(V + E)</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- 右侧可视化区 -->
+      <main>
+        <div class="canvas-wrapper">
+          <div class="space-between" style="margin-bottom:12px;">
+            <span style="font-weight:600;">Dijkstra 最短路径</span>
+            <button class="btn btn-ghost btn-sm" id="btnReset">重置</button>
+          </div>
+          <div class="canvas-stage">
+            <canvas id="dijkstraCanvas">
+              您的浏览器不支持 Canvas，请升级至现代浏览器。
+            </canvas>
+          </div>
+        </div>
+
+        <!-- 播放控制条 -->
+        <div class="playback-bar" style="margin-top:12px;">
+          <button class="btn btn-icon" id="btnFirst" title="回到开始">⏮</button>
+          <button class="btn btn-icon" id="btnPrev" title="上一步">◀</button>
+          <button class="btn btn-icon" id="btnPlayPause" title="播放/暂停">▶</button>
+          <button class="btn btn-icon" id="btnLast" title="跳到末尾">⏭</button>
+          <div class="progress" id="progressBar">
+            <div class="progress-fill" id="progressFill" style="width:0%"></div>
+          </div>
+          <span id="stepCounter" style="font-size:0.82rem;color:var(--muted);white-space:nowrap;">0 / 0</span>
+        </div>
+
+        <!-- 当前步骤说明 -->
+        <div class="card" style="margin-top:12px;">
+          <div style="font-size:0.78rem;color:var(--muted);margin-bottom:4px;">当前步骤</div>
+          <div id="stepDesc" style="font-size:0.9rem;">——</div>
+        </div>
+
+        <!-- 步骤日志 -->
+        <div class="step-log" id="stepLog" style="margin-top:12px;"></div>
+
+        <!-- 最终结果（运行后显示） -->
+        <div class="card" id="resultCard" style="margin-top:12px;display:none;">
+          <div style="font-size:0.78rem;color:var(--muted);margin-bottom:8px;">最短路径结果</div>
+          <div id="resultTable"></div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Toast 容器 -->
+  <div id="toastContainer" style="
+    position:fixed;bottom:24px;right:24px;
+    display:flex;flex-direction:column;gap:8px;
+    z-index:9999;pointer-events:none;
+  "></div>
+
+  <script src="../js/dijkstra.js" defer></script>
+</body>
+</html>
