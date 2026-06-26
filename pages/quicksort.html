@@ -1,20 +1,25 @@
 <!DOCTYPE html>
-<html lang="zh-cn">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>快速排序 - 算法可视化系统</title>
     <link rel="stylesheet" href="../css/style.css">
 </head>
+<!--
+#TODO:
+1. 控制条新增的 ⏮/⏭ 按钮（id=qs-btn-first / qs-btn-last）尚未在 quicksort.js 中绑定事件
+2. "当前步骤"说明区为占位，需在 quicksort.js 中实现说明文本输出（id=qs-step-desc）
+-->
 <body>
     <div class="container">
 
         <!-- 顶部导航 -->
         <header class="site-header">
-            <div class="brand">
-                <div class="logo">A</div>
+            <a class="brand" href="../index.html" style="text-decoration:none;color:inherit;">
+                <div class="logo">⚙</div>
                 <span class="title">算法可视化系统</span>
-            </div>
+            </a>
             <nav class="nav-links">
                 <a href="../index.html">首页</a>
                 <a href="quicksort.html" class="active">快速排序</a>
@@ -29,7 +34,7 @@
             <aside class="sidebar">
                 <div class="panel controls">
 
-                    <!-- 算法标题 -->
+                    <!-- 算法简介（含复杂度） -->
                     <div>
                         <div class="space-between">
                             <span class="algo-title">快速排序</span>
@@ -38,61 +43,63 @@
                         <p class="muted small" style="margin-top:6px">
                             选取基准元素，将数组分为小于和大于基准的两部分，递归排序。
                         </p>
+                        <div class="complexity" style="margin-top:12px;">
+                            <div class="complexity-item">
+                                <span class="label">时间复杂度（平均）</span>
+                                <span class="value">O(n log n)</span>
+                            </div>
+                            <div class="complexity-item">
+                                <span class="label">时间复杂度（最坏）</span>
+                                <span class="value">O(n²)</span>
+                            </div>
+                            <div class="complexity-item">
+                                <span class="label">空间复杂度</span>
+                                <span class="value">O(log n)</span>
+                            </div>
+                        </div>
                     </div>
 
                     <hr style="border:none;border-top:1px solid var(--glass-border)">
 
-                    <!-- 测试用例选择 -->
-                    <div class="input-group">
-                        <label for="qs-testcase-select">预置测试用例</label>
-                        <select id="qs-testcase-select"></select>
-                        <span class="input-hint" id="qs-testcase-desc"></span>
-                    </div>
-                    <button class="btn btn-ghost" id="qs-load-testcase">载入用例</button>
-
-                    <hr style="border:none;border-top:1px solid var(--glass-border)">
-
-                    <!-- 手动输入 -->
-                    <div class="input-group">
-                        <label for="qs-input">手动输入数组</label>
-                        <input type="text" id="qs-input" placeholder="例：7, 2, 9, 4, 3, 8" />
-                        <span class="input-hint">用逗号或空格分隔，范围 1 - 99</span>
-                        <span class="input-error" id="qs-input-error" style="display:none"></span>
-                    </div>
-                    <div class="row">
-                        <button class="btn btn-primary flex-1" id="qs-start">开始排序</button>
-                        <button class="btn btn-ghost" id="qs-random" title="随机生成">随机</button>
-                    </div>
-
-                    <hr style="border:none;border-top:1px solid var(--glass-border)">
-
-                    <!-- 图例说明 -->
+                    <!-- 输入数据 -->
                     <div>
-                        <p class="small muted" style="margin-bottom:8px">颜色图例</p>
+                        <h3 style="margin:0 0 12px;font-size:1rem;">输入数据</h3>
+
+                        <div class="input-group">
+                            <label for="qs-input">手动输入数组</label>
+                            <input type="text" id="qs-input" placeholder="例：7, 2, 9, 4, 3, 8" />
+                            <span class="input-hint">用逗号或空格分隔，范围 1 - 99</span>
+                        </div>
+
+                        <div class="row" style="margin-top:8px;">
+                            <button class="btn btn-ghost" id="qs-random" title="随机生成">随机生成</button>
+                            <button class="btn btn-primary" id="qs-start">▶ 开始排序</button>
+                        </div>
+                    </div>
+
+                    <hr style="border:none;border-top:1px solid var(--glass-border)">
+
+                    <!-- 预设测试用例 -->
+                    <div>
+                        <h3 style="margin:0 0 12px;font-size:1rem;">预设测试用例</h3>
+                        <div class="input-group">
+                            <select id="qs-testcase-select"></select>
+                            <span class="input-hint" id="qs-testcase-desc"></span>
+                        </div>
+                        <button class="btn btn-ghost" id="qs-load-testcase" style="margin-top:8px;">载入用例</button>
+                    </div>
+
+                    <hr style="border:none;border-top:1px solid var(--glass-border)">
+
+                    <!-- 颜色图例 -->
+                    <div>
+                        <h3 style="margin:0 0 12px;font-size:1rem;">颜色图例</h3>
                         <div style="display:flex;flex-direction:column;gap:6px;font-size:0.82rem">
                             <div class="row gap-8"><span style="width:14px;height:14px;border-radius:3px;background:linear-gradient(180deg,#3b82f6,#06b6d4);flex-shrink:0"></span>待排序</div>
                             <div class="row gap-8"><span style="width:14px;height:14px;border-radius:3px;background:#a855f7;flex-shrink:0"></span>基准元素 (pivot)</div>
                             <div class="row gap-8"><span style="width:14px;height:14px;border-radius:3px;background:#f59e0b;flex-shrink:0"></span>正在比较</div>
                             <div class="row gap-8"><span style="width:14px;height:14px;border-radius:3px;background:#ef4444;flex-shrink:0"></span>正在交换</div>
                             <div class="row gap-8"><span style="width:14px;height:14px;border-radius:3px;background:#22c55e;flex-shrink:0"></span>已就位</div>
-                        </div>
-                    </div>
-
-                    <hr style="border:none;border-top:1px solid var(--glass-border)">
-
-                    <!-- 复杂度 -->
-                    <div class="complexity">
-                        <div class="complexity-item">
-                            <span class="label">时间复杂度（平均）</span>
-                            <span class="value">O(n log n)</span>
-                        </div>
-                        <div class="complexity-item">
-                            <span class="label">时间复杂度（最坏）</span>
-                            <span class="value">O(n²)</span>
-                        </div>
-                        <div class="complexity-item">
-                            <span class="label">空间复杂度</span>
-                            <span class="value">O(log n)</span>
                         </div>
                     </div>
 
@@ -105,42 +112,42 @@
 
                     <!-- 标题行 -->
                     <div class="algo-header">
-                        <div>
-                            <span class="algo-title">可视化面板</span>
-                            <span class="muted small" style="margin-left:8px" id="qs-data-display"></span>
-                        </div>
-                        <span class="step-counter" id="qs-step-counter">步骤 0 / 0</span>
+                        <span class="algo-title">可视化面板</span>
+                        <button class="btn btn-ghost btn-sm" id="qs-btn-reset" disabled title="重置">↺ 重置</button>
                     </div>
 
                     <!-- Canvas 画布 -->
                     <div class="canvas-stage" id="qs-canvas-stage">
                         <canvas id="qs-canvas"></canvas>
-                        <div id="qs-placeholder" style="color:var(--muted);font-size:0.9rem">
-                            请载入测试用例或手动输入数据，然后点击「开始排序」
-                        </div>
+                        
                     </div>
 
                     <!-- 播放控制条 -->
                     <div class="playback-bar">
-                        <button class="btn btn-ghost btn-sm" id="qs-btn-prev" disabled title="上一步">◀ 上一步</button>
-                        <button class="btn btn-ghost btn-sm" id="qs-btn-play" disabled title="播放">▶ 播放</button>
-                        <button class="btn btn-ghost btn-sm" id="qs-btn-next" disabled title="下一步">下一步 ▶</button>
-
+                        <button class="btn btn-icon" id="qs-btn-first" disabled title="回到开始">⏮</button>
+                        <button class="btn btn-icon" id="qs-btn-prev" disabled title="上一步">◀</button>
+                        <button class="btn btn-icon" id="qs-btn-play" disabled title="播放/暂停">▶</button>
+                        <button class="btn btn-icon" id="qs-btn-last" disabled title="跳到末尾">⏭</button>
                         <div class="progress" id="qs-progress">
                             <div class="progress-fill" id="qs-progress-fill" style="width:0%"></div>
                         </div>
-
+                        <span id="qs-step-counter" style="font-size:0.82rem;color:var(--muted);white-space:nowrap;">0 / 0</span>
                         <div class="speed-control">
                             <span>速度</span>
                             <input type="range" id="qs-speed" min="1" max="10" value="5">
                             <span id="qs-speed-label">5</span>
                         </div>
+                    </div>
 
-                        <button class="btn btn-ghost btn-sm" id="qs-btn-reset" disabled title="重置">↺ 重置</button>
+                    <!-- 当前步骤说明 -->
+                    <div class="card" style="margin-top:12px;">
+                        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:4px;">当前步骤</div>
+                        <div id="qs-step-desc" style="font-size:0.9rem;">——</div>
+                        <div id="qs-data-display" style="display:none;"></div>
                     </div>
 
                     <!-- 步骤日志 -->
-                    <div class="step-log" id="qs-step-log">
+                    <div class="step-log" id="qs-step-log" style="margin-top:12px;">
                         <span class="muted">执行步骤将在此显示...</span>
                     </div>
 

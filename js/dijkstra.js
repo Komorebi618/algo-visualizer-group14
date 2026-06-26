@@ -317,7 +317,7 @@ let elNodeCount, elSourceNode, elEdgeList;
 let elBtnRun, elBtnRandom, elBtnReset;
 let elBtnFirst, elBtnPrev, elBtnPlayPause, elBtnLast;
 let elProgressFill, elStepCounter, elStepDesc, elStepLog;
-let elResultCard, elResultTable, elTestcaseList;
+let elResultCard, elResultTable, elTestcaseSelect, elTestcaseDesc, elBtnLoadTestcase;
 
 // ── 节点坐标计算 ──────────────────────────────────────────────
 
@@ -616,21 +616,9 @@ function renderResultTable(distances, previous, sourceId, nodes) {
   elResultCard.style.display = 'block';
 }
 
-// ── Toast 提示 ────────────────────────────────────────────────
+// ── Toast 提示（统一走 Common.showToast） ────────────────────
 
-/**
- * @param {string} message
- * @param {'error'|'info'|'success'} type
- */
-function showToast(message, type) {
-  const container = document.getElementById('toastContainer');
-  const el = document.createElement('div');
-  el.className = `toast toast-${type === 'error' ? 'error' : type === 'success' ? 'success' : 'info'}`;
-  el.style.pointerEvents = 'auto';
-  el.textContent = message;
-  container.appendChild(el);
-  setTimeout(() => el.remove(), 3500);
-}
+const showToast = (message, type) => Common.showToast(message, type);
 
 // ── 源节点 select 动态更新 ────────────────────────────────────
 
@@ -706,29 +694,33 @@ function resizeCanvas() {
   canvas.height = stage.clientHeight || 420;
 }
 
-// ── 测试用例渲染 ──────────────────────────────────────────────
+// ── 测试用例渲染（下拉框） ────────────────────────────────────
 
 function renderTestcaseList() {
-  elTestcaseList.innerHTML = '';
+  elTestcaseSelect.innerHTML = '';
   TESTCASES.forEach((tc, idx) => {
-    const item = document.createElement('div');
-    item.className = 'testcase-item';
-    item.innerHTML = `
-      <div>
-        <div style="font-size:0.88rem;">${escapeHtml(tc.name)}</div>
-        <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">${escapeHtml(tc.description)}</div>
-      </div>
-      <span class="badge badge-info">${tc.nodeCount}V</span>`;
-    item.addEventListener('click', () => {
-      document.querySelectorAll('.testcase-item').forEach(el => el.classList.remove('active'));
-      item.classList.add('active');
-      elNodeCount.value = tc.nodeCount;
-      updateSourceSelect(tc.nodeCount);
-      elSourceNode.value = tc.sourceId;
-      elEdgeList.value   = tc.edges;
-    });
-    elTestcaseList.appendChild(item);
+    const opt = document.createElement('option');
+    opt.value = idx;
+    opt.textContent = `${tc.name}（${tc.nodeCount}V）`;
+    elTestcaseSelect.appendChild(opt);
   });
+  updateTestcaseDesc();
+}
+
+function updateTestcaseDesc() {
+  const idx = parseInt(elTestcaseSelect.value, 10);
+  const tc = TESTCASES[idx];
+  if (tc) elTestcaseDesc.textContent = tc.description;
+}
+
+function loadSelectedTestcase() {
+  const idx = parseInt(elTestcaseSelect.value, 10);
+  const tc = TESTCASES[idx];
+  if (!tc) return;
+  elNodeCount.value = tc.nodeCount;
+  updateSourceSelect(tc.nodeCount);
+  elSourceNode.value = tc.sourceId;
+  elEdgeList.value   = tc.edges;
 }
 
 // ── init ──────────────────────────────────────────────────────
@@ -753,7 +745,9 @@ function init() {
   elStepLog      = document.getElementById('stepLog');
   elResultCard   = document.getElementById('resultCard');
   elResultTable  = document.getElementById('resultTable');
-  elTestcaseList = document.getElementById('testcaseList');
+  elTestcaseSelect    = document.getElementById('testcaseSelect');
+  elTestcaseDesc      = document.getElementById('testcaseDesc');
+  elBtnLoadTestcase   = document.getElementById('btnLoadTestcase');
 
   sm = new MiniStepManager(renderState, updateDesc);
 
@@ -802,6 +796,8 @@ function init() {
   });
 
   renderTestcaseList();
+  elTestcaseSelect.addEventListener('change', updateTestcaseDesc);
+  elBtnLoadTestcase.addEventListener('click', loadSelectedTestcase);
 }
 
 window.addEventListener('load', init);

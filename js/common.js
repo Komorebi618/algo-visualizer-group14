@@ -108,6 +108,37 @@ const Common = (() => {
         createMessageArea(container, "error", message);
     };
 
+    /**
+     * 在页面右下角弹出 Toast 提示，3.5s 后自动消失。
+     * 三个算法页面统一的浮层错误/提示入口。
+     * @param {string} message 提示文案
+     * @param {'error'|'info'|'success'} [type='info']
+     * @param {number} [duration=3500] 自动消失毫秒数，传 0 表示不自动消失
+     */
+    const showToast = (message, type = 'info', duration = 3500) => {
+        let container = document.getElementById('toastContainer');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'toastContainer';
+            // 左上角浮层（避开顶部 site-header 的高度）
+            Object.assign(container.style, {
+                position: 'fixed', top: '96px', left: '24px',
+                display: 'flex', flexDirection: 'column', gap: '8px',
+                zIndex: '9999', pointerEvents: 'none',
+                maxWidth: 'min(360px, calc(100vw - 48px))',
+            });
+            document.body.appendChild(container);
+        }
+        const safeType = type === 'error' || type === 'success' ? type : 'info';
+        const el = document.createElement('div');
+        el.className = `toast toast-${safeType}`;
+        el.style.pointerEvents = 'auto';
+        el.textContent = message;
+        container.appendChild(el);
+        if (duration > 0) setTimeout(() => el.remove(), duration);
+        return el;
+    };
+
     class StepManager {
         constructor({ onStep = () => {}, onPlayEnd = () => {} } = {}) {
             this.steps = [];
@@ -230,6 +261,7 @@ const Common = (() => {
         deepClone,
         showInfo,
         showError,
+        showToast,
         StepManager,
         populateTestcaseSelect,
         getSelectedTestcase,

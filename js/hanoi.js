@@ -64,7 +64,6 @@ window.Hanoi = (() => {
     refs.stepCounter = Common.$('#stepCounter');
     refs.stepDesc = Common.$('#stepDesc');
     refs.stepLog = Common.$('#stepLog');
-    refs.errorBox = Common.$('#errorBox');
     refs.moveCountLabel = Common.$('#moveCountLabel');
     refs.canvas = Common.$('#hanoiCanvas');
   };
@@ -365,7 +364,8 @@ window.Hanoi = (() => {
   };
 
   const clearError = () => {
-    if (refs.errorBox) Common.clearChildren(refs.errorBox);
+    // 错误显示已统一为右下角 Toast（Common.showToast），自动消失，无需主动清除。
+    // 函数保留以维持其他位置的调用（重置/重新运行的时机点），未来可移除。
   };
 
   // ============================================================
@@ -397,7 +397,7 @@ window.Hanoi = (() => {
     try {
       n = parseDiskCount(refs.diskCount ? refs.diskCount.value : '');
     } catch (err) {
-      Common.showError('#errorBox', err.message);
+      Common.showToast(err.message, 'error');
       return;
     }
 
@@ -422,7 +422,7 @@ window.Hanoi = (() => {
       updateStepDesc('——');
       updateMoveCount(0);
       updateProgress(-1, 0);
-      Common.showError('#errorBox', ERROR_MESSAGES.RUN_FAILED);
+      Common.showToast(ERROR_MESSAGES.RUN_FAILED, 'error');
     }
   };
 
@@ -461,7 +461,7 @@ window.Hanoi = (() => {
       : [];
     if (!refs.testcaseSelect) return;
     if (testcases.length === 0) {
-      Common.showError('#errorBox', ERROR_MESSAGES.NO_TESTCASES);
+      Common.showToast(ERROR_MESSAGES.NO_TESTCASES, 'error');
       return;
     }
     Common.populateTestcaseSelect(
