@@ -326,7 +326,6 @@ const QuickSort = (() => {
         const stage        = Common.$("#qs-canvas-stage");       // canvas 的父容器，用于读取实际尺寸
         const placeholder  = Common.$("#qs-placeholder");        // 未载入数据时的提示文字
         const inputEl      = Common.$("#qs-input");
-        const inputError   = Common.$("#qs-input-error");        // 输入校验错误信息
         const dataDisplay  = Common.$("#qs-data-display");       // 显示当前输入数组
         const stepLog      = Common.$("#qs-step-log");           // 步骤日志滚动区
         const stepCounter  = Common.$("#qs-step-counter");       // "步骤 X / Y" 计数
@@ -483,35 +482,29 @@ const QuickSort = (() => {
          */
         function parseInput() {
             const raw = inputEl.value.trim();
-            inputError.style.display = "none";
 
             if (!raw) {
-                inputError.textContent = "请输入数组数据";
-                inputError.style.display = "block";
+                Common.showToast("请输入数组数据", "error");
                 return null;
             }
             let arr;
             try {
                 arr = Common.parseNumberArray(raw); // common.js 提供，支持中文逗号和空格分隔
             } catch (e) {
-                inputError.textContent = e.message;
-                inputError.style.display = "block";
+                Common.showToast(e.message, "error");
                 return null;
             }
             if (arr.length < 2) {
-                inputError.textContent = "至少需要 2 个数字";
-                inputError.style.display = "block";
+                Common.showToast("至少需要 2 个数字", "error");
                 return null;
             }
             if (arr.length > 20) {
-                inputError.textContent = "最多支持 20 个数字（Canvas 显示限制）";
-                inputError.style.display = "block";
+                Common.showToast("最多支持 20 个数字（Canvas 显示限制）", "error");
                 return null;
             }
             const invalid = arr.find(v => v < 1 || v > 99 || !Number.isInteger(v));
             if (invalid !== undefined) {
-                inputError.textContent = "每个数字需为 1 - 99 的整数";
-                inputError.style.display = "block";
+                Common.showToast("每个数字需为 1 - 99 的整数", "error");
                 return null;
             }
             return arr;

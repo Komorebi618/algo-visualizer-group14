@@ -33,6 +33,7 @@ html, body { height: 100%; }
 body {
     font-family: var(--ui-font);                                /* 使用定义的UI字体 */
     background: linear-gradient(180deg, var(--bg), #071026 120%); /* 从上到下的深色渐变背景 */
+    background-attachment: fixed;                               /* 渐变锁定到视口，避免内容超出视口时底部出现深色"蒙版"分界 */
     color: #e6eef8;                                             /* 主文字颜色（浅蓝白） */
     -webkit-font-smoothing: antialiased;                        /* 字体抗锯齿（Mac/Chrome） */
     -moz-osx-font-smoothing: grayscale;                         /* 字体抗锯齿（Firefox） */
@@ -378,6 +379,7 @@ label {
 /* .canvas-stage: Canvas画布的直接容器，居中显示画布 */
 .canvas-stage {
     flex: 1;                        /* 占据剩余空间 */
+    min-height: 300px;              /* 防止 canvas-wrapper 内有兄弟元素时被挤压 */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -733,9 +735,9 @@ label {
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
 
 /* ---------- Animations （动画关键帧定义） ---------- */
-/* slideIn: 从右侧滑入（用于toast消息提示） */
+/* slideIn: 从左侧滑入（用于toast消息提示，左上角浮现） */
 @keyframes slideIn {
-    from { transform: translateX(100%); opacity: 0; }
+    from { transform: translateX(-100%); opacity: 0; }
     to { transform: translateX(0); opacity: 1; }
 }
 /* fadeIn: 淡入效果 */
