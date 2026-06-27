@@ -55,6 +55,7 @@ window.Hanoi = (() => {
     refs.diskCount = Common.$('#diskCount');
     refs.btnRandom = Common.$('#btnRandom');
     refs.btnRun = Common.$('#btnRun');
+    refs.btnReset = Common.$('#btnReset');
     refs.testcaseSelect = Common.$('#testcaseSelect');
     refs.btnFirst = Common.$('#btnFirst');
     refs.btnPrev = Common.$('#btnPrev');
@@ -363,6 +364,22 @@ window.Hanoi = (() => {
     }
   };
 
+  /** 批量设置播放控制按钮的可用状态（载入数据前全部禁用） */
+  const setControlsEnabled = (enabled) => {
+    if (refs.btnFirst) refs.btnFirst.disabled = !enabled;
+    if (refs.btnPrev) refs.btnPrev.disabled = !enabled;
+    if (refs.btnPlayPause) refs.btnPlayPause.disabled = !enabled;
+    if (refs.btnLast) refs.btnLast.disabled = !enabled;
+    if (refs.btnReset) refs.btnReset.disabled = !enabled;
+  };
+
+  /** 根据当前步骤位置同步边界按钮禁用状态：第 0 步禁用 ⏮/◀，末步禁用 ⏭ */
+  const syncBoundaryButtons = (idx, total) => {
+    if (refs.btnFirst) refs.btnFirst.disabled = (idx <= 0);
+    if (refs.btnPrev) refs.btnPrev.disabled = (idx <= 0);
+    if (refs.btnLast) refs.btnLast.disabled = (idx >= total - 1);
+  };
+
   const clearError = () => {
     // 错误显示已统一为右下角 Toast（Common.showToast），自动消失，无需主动清除。
     // 函数保留以维持其他位置的调用（重置/重新运行的时机点），未来可移除。
@@ -415,6 +432,7 @@ window.Hanoi = (() => {
       solveHanoi(n);
       stepManager.play(PLAY_SPEED);
       setPlayPauseIcon(true);
+      setControlsEnabled(true);
     } catch (err) {
       stepManager.pause();
       stepManager.setSteps([]);
@@ -422,6 +440,7 @@ window.Hanoi = (() => {
       updateStepDesc('——');
       updateMoveCount(0);
       updateProgress(-1, 0);
+      setControlsEnabled(false);
       Common.showToast(ERROR_MESSAGES.RUN_FAILED, 'error');
     }
   };
@@ -450,6 +469,7 @@ window.Hanoi = (() => {
     setPlayPauseIcon(false);
     drawEmpty(ctx);
     clearError();
+    setControlsEnabled(false);
   };
 
   /**
@@ -488,6 +508,7 @@ window.Hanoi = (() => {
   const bindEvents = () => {
     Common.addEvent(refs.btnRun, 'click', handleRun);
     Common.addEvent(refs.btnRandom, 'click', handleRandom);
+    Common.addEvent(refs.btnReset, 'click', reset);
 
     Common.addEvent(refs.btnFirst, 'click', () => {
       stepManager.pause();
@@ -563,6 +584,7 @@ window.Hanoi = (() => {
         updateProgress(idx, stepManager.steps.length);
         updateMoveCount(step.state.moveCount);
         appendStepLog(idx, step.description);
+        syncBoundaryButtons(idx, stepManager.steps.length);
       },
       onPlayEnd: () => {
         setPlayPauseIcon(false);
@@ -572,6 +594,7 @@ window.Hanoi = (() => {
     resizeCanvas();
     initTestcaseUI();
     bindEvents();
+    setControlsEnabled(false);
     initialized = true;
   };
 
