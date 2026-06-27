@@ -1,8 +1,5 @@
 /**
  * Dijkstra 最短路径算法模块
- *
- * 当前阶段：纯算法核心，不依赖 common.js
- * 后续接入：将 steps.push(...) 替换为 sm.record(...) 即可
  */
 
 // ─── 数据结构 ─────────────────────────────────────────────
@@ -193,102 +190,6 @@ const TESTCASES = [
   },
 ];
 
-// ── MiniStepManager（临时内联，接口与 StepManager 完全一致） ──
-// TODO: common.js 就绪后，删除此 class，将构造行改为 new StepManager(renderFn, descUpdateFn)
-
-class MiniStepManager {
-  /**
-   * @param {(state: Object) => void} renderFn
-   * @param {(desc: string, idx: number, total: number) => void} descUpdateFn
-   */
-  constructor(renderFn, descUpdateFn) {
-    this._renderFn    = renderFn;
-    this._descFn      = descUpdateFn;
-    this.steps        = [];
-    this.currentIndex = -1;
-    this.isPlaying    = false;
-    this.speed        = 800;
-    this._timer       = null;
-  }
-
-  /** @param {Object} state @param {string} description */
-  record(state, description) {
-    this.steps.push({ state: JSON.parse(JSON.stringify(state)), description });
-  }
-
-  play() {
-    if (this.steps.length === 0) return;
-    if (this.currentIndex < 0) this.currentIndex = 0;
-    this.isPlaying = true;
-    this._tick();
-  }
-
-  pause() {
-    this.isPlaying = false;
-    clearTimeout(this._timer);
-  }
-
-  next() {
-    this.pause();
-    if (this.currentIndex < this.steps.length - 1) {
-      this.currentIndex++;
-      this._render();
-    }
-  }
-
-  prev() {
-    this.pause();
-    if (this.currentIndex > 0) {
-      this.currentIndex--;
-      this._render();
-    }
-  }
-
-  /** @param {number} index */
-  gotoStep(index) {
-    this.pause();
-    this.currentIndex = Math.max(0, Math.min(index, this.steps.length - 1));
-    this._render();
-  }
-
-  reset() {
-    this.pause();
-    if (this.steps.length > 0) {
-      this.currentIndex = 0;
-      this._render();
-    }
-  }
-
-  clear() {
-    this.pause();
-    this.steps        = [];
-    this.currentIndex = -1;
-  }
-
-  /** @param {number} ms */
-  setSpeed(ms) {
-    this.speed = ms;
-  }
-
-  _render() {
-    const { state, description } = this.steps[this.currentIndex];
-    this._renderFn(state);
-    this._descFn(description, this.currentIndex, this.steps.length);
-  }
-
-  _tick() {
-    if (!this.isPlaying) return;
-    if (this.currentIndex >= this.steps.length - 1) {
-      this.isPlaying = false;
-      updatePlayPauseBtn();
-      return;
-    }
-    this.currentIndex++;
-    this._render();
-    this._timer = setTimeout(() => this._tick(), this.speed);
-  }
-}
-
 // ── Canvas 颜色常量（对应 style.css 中的 CSS 变量值） ────────
 
 const COLOR = {
@@ -302,10 +203,10 @@ const COLOR = {
   TEXT_LABEL:    '#e2e8f0',
   TEXT_DIST:     '#94a3b8',
   TEXT_DIST_SET: '#e2e8f0',
-  BG:            'transparent',
 };
 
 const NODE_RADIUS = 20;
+const PLAY_SPEED  = 800;
 
 // ── DOM 引用（init 后赋值） ───────────────────────────────────
 
@@ -343,7 +244,7 @@ function calcNodePositions(n, w, h) {
   return positions;
 }
 
-// ── 内联绘图工具（等 CanvasHelper 就绪后替换） ────────────────
+// ── 内联绘图工具 ─────────────────────────────────────────────
 
 /**
  * 绘制带箭头的有向边
@@ -519,6 +420,15 @@ function setControlsEnabled(enabled) {
   elBtnReset.disabled     = !enabled;
 }
 
+/** 跳到指定 index：自动 pause + 越界裁剪 + 触发 onStep 重绘 */
+function gotoStep(index) {
+  if (sm.steps.length === 0) return;
+  sm.pause();
+  const i = Math.max(0, Math.min(index, sm.steps.length - 1));
+  sm.currentIndex = i;
+  sm.onStep(sm.getCurrentStep(), i);
+}
+
 function appendLogEntry(stepNum, desc) {
   // 若该步骤已有日志则不重复追加
   const existing = elStepLog.querySelector(`[data-step="${stepNum}"]`);
@@ -661,7 +571,8 @@ function run() {
 
   currentGraph = parsed.graph;
 
-  sm.clear();
+  sm.pause();
+  sm.setSteps([]);
   elStepLog.innerHTML   = '';
   elResultCard.style.display = 'none';
 
@@ -679,17 +590,18 @@ function run() {
   }
 
   for (const step of result.steps) {
-    sm.record(step, step.description);
+    sm.addStep({ state: step, description: step.description });
   }
 
   renderResultTable(result.distances, result.previous, sourceId, parsed.graph.nodes);
   setControlsEnabled(true);
-  sm.play();
+  sm.play(PLAY_SPEED);
   updatePlayPauseBtn();
 }
 
 function reset() {
-  sm.clear();
+  sm.pause();
+  sm.setSteps([]);
   currentGraph = null;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   elStepDesc.textContent        = '——';
@@ -719,13 +631,6 @@ function renderTestcaseList() {
     opt.textContent = `${tc.name}（${tc.nodeCount}V）`;
     elTestcaseSelect.appendChild(opt);
   });
-  updateTestcaseDesc();
-}
-
-function updateTestcaseDesc() {
-  const idx = parseInt(elTestcaseSelect.value, 10);
-  const tc = TESTCASES[idx];
-  if (tc) elTestcaseDesc.textContent = tc.description;
 }
 
 function loadSelectedTestcase() {
@@ -764,7 +669,22 @@ function init() {
   elTestcaseSelect    = document.getElementById('testcaseSelect');
   elTestcaseDesc      = document.getElementById('testcaseDesc');
 
-  sm = new MiniStepManager(renderState, updateDesc);
+  sm = new Common.StepManager({
+    onStep: (step, idx) => {
+      if (!step) {
+        // 防御性分支：reset 触发的空帧
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        elStepDesc.textContent = '——';
+        elProgressFill.style.width = '0%';
+        elStepCounter.textContent = '0 / 0';
+        updatePlayPauseBtn();
+        return;
+      }
+      renderState(step.state);
+      updateDesc(step.description, idx, sm.steps.length);
+    },
+    onPlayEnd: () => updatePlayPauseBtn(),
+  });
 
   resizeCanvas();
   window.addEventListener('resize', () => {
@@ -788,16 +708,16 @@ function init() {
   elBtnRandom.addEventListener('click', () => { generateRandom(); });
   elBtnReset.addEventListener('click', reset);
 
-  elBtnFirst.addEventListener('click', () => { sm.gotoStep(0); });
-  elBtnPrev.addEventListener('click',  () => { sm.prev(); });
-  elBtnLast.addEventListener('click',  () => { sm.gotoStep(sm.steps.length - 1); });
+  elBtnFirst.addEventListener('click', () => { gotoStep(0); });
+  elBtnPrev.addEventListener('click',  () => { sm.pause(); sm.prev(); });
+  elBtnLast.addEventListener('click',  () => { gotoStep(sm.steps.length - 1); });
 
   elBtnPlayPause.addEventListener('click', () => {
     if (sm.isPlaying) {
       sm.pause();
     } else {
       if (sm.steps.length === 0) return;
-      sm.play();
+      sm.play(PLAY_SPEED);
     }
     updatePlayPauseBtn();
   });
@@ -807,7 +727,7 @@ function init() {
     if (sm.steps.length === 0) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const pct  = (e.clientX - rect.left) / rect.width;
-    sm.gotoStep(Math.round(pct * (sm.steps.length - 1)));
+    gotoStep(Math.round(pct * (sm.steps.length - 1)));
   });
 
   renderTestcaseList();

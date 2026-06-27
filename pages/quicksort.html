@@ -6,11 +6,6 @@
     <title>快速排序 - 算法可视化系统</title>
     <link rel="stylesheet" href="../css/style.css">
 </head>
-<!--
-#TODO:
-1. 控制条新增的 ⏮/⏭ 按钮（id=qs-btn-first / qs-btn-last）尚未在 quicksort.js 中绑定事件
-2. "当前步骤"说明区为占位，需在 quicksort.js 中实现说明文本输出（id=qs-step-desc）
--->
 <body>
     <div class="container">
 
@@ -72,7 +67,7 @@
                         </div>
 
                         <div class="row" style="margin-top:8px;">
-                            <button class="btn btn-ghost" id="qs-random" title="随机生成">随机生成</button>
+                            <button class="btn btn-ghost" id="qs-random">随机生成</button>
                             <button class="btn btn-primary" id="qs-start">▶ 开始排序</button>
                         </div>
                     </div>
@@ -112,7 +107,7 @@
                     <!-- 标题行 -->
                     <div class="algo-header">
                         <span class="algo-title">可视化面板</span>
-                        <button class="btn btn-ghost btn-sm" id="qs-btn-reset" disabled title="重置">↺ 重置</button>
+                        <button class="btn btn-ghost btn-sm" id="qs-btn-reset" disabled>↺ 重置</button>
                     </div>
 
                     <!-- Canvas 画布 -->
@@ -144,7 +139,6 @@
                     <div class="card" style="margin-top:12px;">
                         <div style="font-size:0.78rem;color:var(--muted);margin-bottom:4px;">当前步骤</div>
                         <div id="qs-step-desc" style="font-size:0.9rem;">——</div>
-                        <div id="qs-data-display" style="display:none;"></div>
                     </div>
 
                     <!-- 步骤日志 -->

@@ -658,76 +658,6 @@ label {
     font-size: 0.85rem;
 }
 
-/* ---------- Algorithm-Specific (legacy classes,目前由 canvas 取代) ---------- */
-/* 快速排序柱状图 */
-.bar {
-    background: linear-gradient(180deg, var(--accent), var(--accent-2));
-    border-radius: 4px 4px 0 0;
-    transition: all var(--transition);
-}
-.bar.comparing { background: var(--warning); }
-.bar.swapping { background: var(--danger); }
-.bar.sorted { background: var(--success); }
-.bar.pivot { background: #a855f7; }
-
-/* Dijkstra 节点 */
-.node {
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--surface-soft);
-    border: 2px solid var(--border);
-    color: var(--text-secondary);
-    font-size: 0.82rem;
-    font-weight: 600;
-    transition: all 0.3s ease;
-}
-.node.active {
-    background: var(--accent);
-    color: #fff;
-    border-color: var(--accent);
-    box-shadow: 0 0 0 4px rgba(37,99,235,0.18);
-}
-.node.visited {
-    background: var(--warning);
-    color: #fff;
-    border-color: var(--warning);
-}
-.node.shortest {
-    background: var(--success);
-    color: #fff;
-    border-color: var(--success);
-}
-
-/* 汉诺塔柱子与盘子 */
-.hanoi-peg {
-    display: flex;
-    flex-direction: column-reverse;
-    align-items: center;
-    gap: 2px;
-    position: relative;
-}
-.hanoi-peg::before {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    width: 4px;
-    height: 100%;
-    background: var(--border);
-    border-radius: 2px;
-}
-.disc {
-    height: 20px;
-    border-radius: 4px;
-    transition: all 0.3s ease;
-}
-.disc.moving {
-    box-shadow: 0 4px 12px rgba(37,99,235,0.3);
-}
-
 /* ---------- Badges / Tags ---------- */
 .badge {
     display: inline-flex;
@@ -842,23 +772,10 @@ label {
 .toast.toast-info { border-left-color: var(--accent); }
 
 /* ---------- Utilities ---------- */
+/* 仅保留 HTML 中实际引用过的工具类:.muted .small .gap-8 .hidden(防御性常备) */
 .muted { color: var(--muted); }
 .small { font-size: 0.85rem; }
-.text-center { text-align: center; }
-.text-mono { font-family: var(--mono); }
-.flex { display: flex; }
-.flex-col { flex-direction: column; }
-.flex-1 { flex: 1; }
-.items-center { align-items: center; }
-.justify-center { justify-content: center; }
-.gap-4 { gap: 4px; }
 .gap-8 { gap: 8px; }
-.gap-12 { gap: 12px; }
-.gap-16 { gap: 16px; }
-.mt-8 { margin-top: 8px; }
-.mt-12 { margin-top: 12px; }
-.mt-16 { margin-top: 16px; }
-.mb-8 { margin-bottom: 8px; }
 .hidden { display: none !important; }
 
 /* ---------- Scrollbar ---------- */

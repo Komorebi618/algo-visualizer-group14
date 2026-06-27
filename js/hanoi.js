@@ -380,11 +380,6 @@ window.Hanoi = (() => {
     if (refs.btnLast) refs.btnLast.disabled = (idx >= total - 1);
   };
 
-  const clearError = () => {
-    // 错误显示已统一为右下角 Toast（Common.showToast），自动消失，无需主动清除。
-    // 函数保留以维持其他位置的调用（重置/重新运行的时机点），未来可移除。
-  };
-
   // ============================================================
   // 4. 控制层
   // ============================================================
@@ -409,7 +404,6 @@ window.Hanoi = (() => {
    * 运行算法：读取输入 → 校验 → 录步 → 自动播放。
    */
   const handleRun = () => {
-    clearError();
     let n;
     try {
       n = parseDiskCount(refs.diskCount ? refs.diskCount.value : '');
@@ -449,7 +443,6 @@ window.Hanoi = (() => {
    * 随机生成 1~8 之间的盘子数。
    */
   const handleRandom = () => {
-    clearError();
     const n = Math.floor(Math.random() * MAX_DISKS) + 1;
     if (refs.diskCount) refs.diskCount.value = String(n);
   };
@@ -468,7 +461,6 @@ window.Hanoi = (() => {
     updateProgress(-1, 0);
     setPlayPauseIcon(false);
     drawEmpty(ctx);
-    clearError();
     setControlsEnabled(false);
   };
 
@@ -493,7 +485,6 @@ window.Hanoi = (() => {
       const tc = Common.getSelectedTestcase(refs.testcaseSelect, testcases);
       if (tc && refs.diskCount) {
         refs.diskCount.value = String(tc.disks);
-        clearError();
       }
     });
     const initial = Common.getSelectedTestcase(refs.testcaseSelect, testcases);

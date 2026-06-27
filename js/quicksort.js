@@ -319,7 +319,6 @@ const QuickSort = (() => {
         const stage        = Common.$("#qs-canvas-stage");       // canvas 的父容器，用于读取实际尺寸
         const placeholder  = Common.$("#qs-placeholder");        // 未载入数据时的提示文字
         const inputEl      = Common.$("#qs-input");
-        const dataDisplay  = Common.$("#qs-data-display");       // 显示当前输入数组
         const stepLog      = Common.$("#qs-step-log");           // 步骤日志滚动区
         const stepCounter  = Common.$("#qs-step-counter");       // "步骤 X / Y" 计数
         const progressFill = Common.$("#qs-progress-fill");      // 进度条填充条
@@ -339,7 +338,6 @@ const QuickSort = (() => {
 
         let steps     = [];    // 当前算法生成的全部步骤
         let isPlaying = false; // 是否处于自动播放状态
-        let playTimer = null;  // 自动播放的 setTimeout 句柄（stopPlay 时用于取消）
 
         /**
          * 将 canvas 的物理像素尺寸同步到其 DOM 父容器的客户端尺寸。
@@ -485,8 +483,6 @@ const QuickSort = (() => {
             setControlsEnabled(true);
             btnPrev.disabled = true; // 第一步时"上一步"始终禁用
             if (btnFirst) btnFirst.disabled = true;
-
-            if (dataDisplay) dataDisplay.textContent = `输入：[ ${arr.join(", ")} ]`;
         }
 
         /**
@@ -543,8 +539,6 @@ const QuickSort = (() => {
             loadSteps(arr);
         });
 
-        // 「载入测试用例」：使用下拉框 change 事件直接载入（仅渲染不播放），由「开始排序」启动动画。
-
         // 测试用例下拉切换时：同步描述文案 + 回填输入框 + 在 Canvas 绘制（不自动播放）
         selectEl.addEventListener("change", () => {
             const tc = Common.getSelectedTestcase(selectEl, window.Testcases.quicksort);
@@ -560,10 +554,6 @@ const QuickSort = (() => {
             stopPlay();
             manager.prev();
         });
-
-        // 「下一步」：停止自动播放，手动进一步
-        // 注：HTML 中按钮 id 现为 qs-btn-last（⏭ 跳到末尾），原 btnNext 已废弃。
-        // 为兼容性保留快捷键，但去除对不存在的 btnNext 的事件绑定。
 
         // 「回到开始」⏮：跳到第 0 步
         if (btnFirst) {
@@ -663,7 +653,7 @@ const QuickSort = (() => {
         init();
     }
 
-    // 暴露核心函数，便于其他模块调用（如集成测试或日志导出）
+    // 暴露算法核心函数（IIFE 返回值，目前未被外部引用）
     return { generateSteps, renderStep };
 
 })();
