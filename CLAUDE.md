@@ -16,7 +16,7 @@ algo-visualizer-group14/
 ├── css/
 │   └── style.css           # 全局样式（CSS 变量 + 公共组件）负责人：孙郭昕
 ├── js/
-│   ├── common.js           # 公共工具库（StepManager/CanvasHelper/Validator/DataGenerator/Logger）负责人：杨帆
+│   ├── common.js           # 公共工具库（DOM 助手 + StepManager + showToast）负责人：杨帆
 │   ├── quicksort.js        # 快速排序模块 负责人：孙郭昕
 │   ├── dijkstra.js         # Dijkstra 模块 负责人：刘卓明
 │   └── hanoi.js            # 汉诺塔模块 负责人：杨帆
@@ -30,18 +30,18 @@ algo-visualizer-group14/
     └── README.md           # 项目文档入口
 ```
 
-## 当前实现状态（2026-06-23）
+## 当前实现状态（2026-06-28）
 
 | 文件 | 状态 |
 |------|------|
-| `css/style.css` | 已完成——深色主题 CSS 变量与部分组件样式 |
-| `index.html` | 骨架，待补充卡片内容 |
-| `js/common.js` | 空文件，待实现 |
-| `js/quicksort.js` | 空文件，待实现 |
-| `js/dijkstra.js` | 空文件，待实现 |
-| `js/hanoi.js` | 空文件，待实现 |
-| `data/testcases.js` | 空文件，待填充 |
-| `pages/*.html` | 骨架，待补充 |
+| `css/style.css` | 已完成——浅色 + 便当盒(Bento Grid)布局 + 毛玻璃 |
+| `index.html` | 已完成——三张算法入口卡片 |
+| `js/common.js` | 已完成——11 个公共 API + StepManager + showToast |
+| `js/quicksort.js` | 已完成 |
+| `js/dijkstra.js` | 已完成 |
+| `js/hanoi.js` | 已完成 |
+| `data/testcases.js` | 已完成 |
+| `pages/*.html` | 已完成 |
 
 ## 架构与核心设计
 
@@ -51,7 +51,7 @@ algo-visualizer-group14/
 表现层      index.html / pages/*.html / css/style.css
 控制层      js/*.js 中的事件绑定与控制函数（算法模块）
 业务逻辑层  js/*.js 中的纯算法实现
-公共服务层  js/common.js（StepManager / CanvasHelper / Validator / DataGenerator / Logger）
+公共服务层  js/common.js（DOM 助手 + StepManager + showToast）
 数据层      data/testcases.js + 运行时 steps 数组（内存）
 ```
 
@@ -59,36 +59,37 @@ algo-visualizer-group14/
 
 ### 关键设计原则
 
-- **数据驱动渲染**：算法只调用 `StepManager.record(state, description)` 录制状态，不直接操作 DOM 或 Canvas。
-- **依赖注入**：渲染回调 `renderFn(state)` 和说明回调 `descUpdateFn(desc, idx, total)` 在构造 StepManager 时由算法模块注入。
+- **数据驱动渲染**：算法只调用 `sm.addStep({state, description})` 录制状态，不直接操作 DOM 或 Canvas。
+- **依赖注入**：渲染回调 `onStep(step, idx)` 和播放结束回调 `onPlayEnd()` 在构造 `Common.StepManager` 时由算法模块注入。
 - **最小外部依赖**：不引入 jQuery / Vue / React，不使用 CDN，完全离线可运行。
 
 ## 公共工具库接口规约（js/common.js）
 
-> 以下为 `js/common.js` 实际实现的接口（已与汉诺塔模块对齐）。最初设计稿中的 `CanvasHelper` / `Validator` / `Logger` 三个独立命名空间**未实现**，相关能力分散到 `Common` 命名空间或由算法模块自行实现。
+> 实际暴露 11 个 API,与三个算法模块的使用对齐。设计稿中曾设想过 `CanvasHelper` / `Validator` / `Logger` 三个独立命名空间,**最终未实现**——相关能力由算法模块自行实现(整数/范围校验、Canvas 绘制)。
 
 ### 命名空间总览
 
-实际只暴露 `window.Common`。所有公共能力都在该命名空间下，**不要**调用 `CanvasHelper.*` / `Validator.*` / `Logger.*` —— 这些不存在。
+实际只暴露 `window.Common`。所有公共能力都在该命名空间下,**不要**调用 `CanvasHelper.*` / `Validator.*` / `Logger.*` —— 这些不存在。
 
 ### Common 暴露的方法
 
 | 类别 | 签名 | 说明 |
 |------|------|------|
-| DOM | `Common.$(sel)`、`Common.$$(sel)` | 查询单/多元素 |
-| DOM | `Common.createElement(tag, attrs?, text?)` | 创建元素，attrs 支持 `class` 和 `dataset` |
-| DOM | `Common.clearChildren(el)`、`Common.addEvent(target, event, handler)` | 清空子节点、绑定事件 |
-| 解析 | `Common.parseNumberArray(str)` | 解析逗号/空格/分号分隔的数字数组；**失败抛错**（不返回 `{ok, value, error}`） |
-| 格式化 | `Common.formatNumberArray(arr)` | 数组转 "1, 2, 3" 形式字符串 |
+| DOM | `Common.$(sel)` | querySelector 简写 |
+| DOM | `Common.createElement(tag, attrs?, text?)` | 创建元素,attrs 支持 `class` 和 `dataset` |
+| DOM | `Common.clearChildren(el)` | 清空子节点 |
+| DOM | `Common.addEvent(target, event, handler)` | 绑定事件,target 支持元素或选择器字符串 |
+| 解析 | `Common.parseNumberArray(str)` | 解析逗号/空格/分号分隔的数字数组;**失败抛错**(不返回 `{ok, value, error}`) |
 | 随机 | `Common.randomIntegerArray(len = 8, min = 1, max = 99)` | 随机整数数组 |
-| 随机 | `Common.randomGraph({ nodeCount, edgeProbability, minWeight, maxWeight })` | **options 对象传参**，返回 `{ nodes, edges }` |
-| 工具 | `Common.cloneMatrix(matrix)` | 二维数组浅拷贝 |
-| 工具 | `Common.deepClone(value)` | 基于 JSON 的深拷贝（算法录步时自行调用，**StepManager 不会自动深拷贝**） |
-| 提示 | `Common.showInfo(selector, msg)`、`Common.showError(selector, msg)` | 在指定容器写入提示 |
+| 工具 | `Common.deepClone(value)` | 基于 JSON 的深拷贝(算法录步时自行调用,**StepManager 不会自动深拷贝**) |
+| 提示 | `Common.showToast(message, type?, duration?)` | 左上角 Toast 浮层(自动消失);`type ∈ 'info'/'error'/'success'`;`duration` 默认 3500ms,传 0 不自动消失 |
 | 测试用例 | `Common.populateTestcaseSelect(selectEl, cases, formatter?)` | 填充测试用例下拉列表 |
 | 测试用例 | `Common.getSelectedTestcase(selectEl, cases)` | 读取当前选中的用例 |
+| StepManager | `new Common.StepManager({onStep, onPlayEnd})` | 步骤播放管理器,见下方详述 |
 
-**整数 / 范围校验、Canvas 绘制需要算法模块自行实现**（不能依赖 `Validator` / `CanvasHelper`）。
+**整数/范围校验、Canvas 绘制需要算法模块自行实现**(不能依赖 `Validator` / `CanvasHelper`)。
+
+**历史接口已删除**(2026-06-28 清理): `Common.$$` / `formatNumberArray` / `randomGraph` / `cloneMatrix` / `showInfo` / `showError` / `initAlgorithmPage`——全部零调用。错误提示统一走 `showToast`。
 
 ### StepManager（class，需实例化）
 
@@ -114,25 +115,26 @@ const sm = new Common.StepManager({
 
 **注意：以下方法不存在，不要调用：** `record`、`clear`、`gotoStep`、`setSpeed`。
 
-### 算法模块调用约定（汉诺塔已采纳，编写 dijkstra.js / quicksort.js 时参考）
+### 算法模块调用约定（三个算法模块均已采纳）
 
-- 录步格式 `{ state, description }`，调用 `addStep` 前自行 `Common.deepClone(state)`。
+- 录步格式 `{ state, description }`,调用 `addStep` 前自行 `Common.deepClone(state)`。
 - 重置 = `sm.pause()` + `sm.setSteps([])` + 重绘空画布。
-- 跳到任意帧：`sm.currentIndex = i` 后手动重绘，或循环 `next()`。
+- 跳到任意帧:`sm.currentIndex = i` 后调 `sm.onStep(sm.getCurrentStep(), i)` 触发重绘,或循环 `next()`。
 - 整数/范围校验在算法模块内自己写。
 - Canvas 绘制直接调用原生 `ctx` API。
+- 错误提示统一用 `Common.showToast(message, 'error')`,不要写入 DOM 容器。
 
 ## 算法模块统一接口（quicksort.js / dijkstra.js / hanoi.js 必须实现）
 
-每个模块暴露三个函数：
+每个模块暴露 `init` / `run` / `reset` 三个函数(其中 hanoi 通过 `window.Hanoi` 显式暴露,quicksort/dijkstra 通过 IIFE 自动初始化):
 
 ```js
-function init()        // 页面加载时调用：获取 Canvas/DOM、绑定按钮事件、构造 StepManager
-function run(input)    // 接收合法输入，执行算法、录制步骤、调用 sm.play()
-function reset()       // 调用 sm.clear()、清空画布与说明区
+function init()        // 页面加载时调用：获取 Canvas/DOM、绑定按钮事件、构造 Common.StepManager
+function run(input)    // 接收合法输入，执行算法、addStep 录制步骤、调用 sm.play(speed)
+function reset()       // sm.pause() + sm.setSteps([])、清空画布与说明区
 ```
 
-**算法主体函数禁止**：直接操作 DOM、直接调用 CanvasHelper、直接读写 Canvas——只通过 `sm.record(state, description)` 暴露状态。
+**算法主体函数禁止**:直接操作 DOM、直接读写 Canvas——只通过 `sm.addStep({state, description})` 暴露状态。
 
 ## 各算法 state 字段
 
@@ -186,22 +188,31 @@ function reset()       // 调用 sm.clear()、清空画布与说明区
 
 ## 样式规范（css/style.css 已有 CSS 变量，使用变量名而非硬编码色值）
 
+主题:**浅色 + 便当盒(Bento Grid)布局 + 毛玻璃**,背景使用 CSS Mesh Gradient(5 层 radial-gradient 叠加,无图片依赖)。canvas-stage 是唯一深色区域(slate-900 实色),与浅色 UI 形成"数据看板"对比。
+
 ```css
-/* 已定义的主要 CSS 变量 */
---bg        /* 页面背景 #0f1724（深蓝灰） */
---panel     /* 面板背景 #0b1220 */
---muted     /* 次要文字 #94a3b8 */
---accent    /* 主强调蓝 #3b82f6 */
---accent-2  /* 辅助青色 #06b6d4 */
---success   /* 成功绿 #22c55e */
---warning   /* 警告橙 #f59e0b */
---danger    /* 错误红 #ef4444 */
---radius    /* 圆角 8px */
+/* 已定义的主要 CSS 变量(完整列表见 css/style.css :root) */
+--bg               /* 页面备选纯色 #eef2ff(Mesh Gradient 不支持时退化) */
+--panel            /* 面板半透明白底 */
+--card             /* 卡片半透明白底 */
+--text-primary     /* 主文字 zinc-900 #18181b */
+--text-secondary   /* 正文 zinc-700 #3f3f46 */
+--muted            /* 辅助文字 zinc-600 #52525b */
+--border           /* 玻璃边框 rgba(255,255,255,0.65) */
+--accent           /* 主蓝 #2563eb (blue-600) */
+--success          /* 绿 #16a34a */
+--warning          /* 橙 #d97706 */
+--danger           /* 红 #dc2626 */
+--canvas-bg        /* canvas 深色岛 #0f172a (slate-900) */
+--canvas-text      /* canvas 内文字 #e2e8f0 (slate-200) */
+--radius           /* 12px */
+--radius-lg        /* 16px (rounded-2xl 对标) */
+--radius-pill      /* 999px */
+--shadow-sm/md/lg  /* 三档真阴影 */
+--glass-blur       /* blur(22px) saturate(170%) */
 ```
 
-注意：实际实现为深色主题，与设计文档中的浅色方案不同，以 `style.css` 中的实际变量为准。
-
-字体族：`'PingFang SC', 'Microsoft YaHei', sans-serif`，间距基于 8px 网格。
+字体族:`'PingFang SC', 'Microsoft YaHei', sans-serif`,间距基于 4/8/12/16 px 网格。
 
 ## 编码规范
 
@@ -257,26 +268,30 @@ test: 增加汉诺塔测试用例
 
 ## 错误处理
 
+错误提示统一通过 `Common.showToast(message, 'error')` 浮层显示(左上角,3.5s 自动消失),不再使用容器内文字提示。
+
 | 错误码 | 场景 | 处理层 |
 |--------|------|--------|
-| E-001 | 输入为空 | Validator 拦截 |
-| E-002 | 包含非法字符 | Validator 拦截 |
-| E-003 | 输入规模超限 | Validator 拦截 |
-| E-004 | 数值超范围 | Validator 拦截 |
-| E-005 | 图节点数不足或不连通 | Validator 拦截 |
-| E-006 | 算法运行时异常 | 算法模块 try-catch，自动调用 reset() |
-| E-007 | 浏览器不支持 Canvas | HTML fallback 文本 |
+| E-001 | 输入为空 | 算法模块内 parse 函数拦截 |
+| E-002 | 包含非法字符 | 算法模块内 parse 函数拦截 |
+| E-003 | 输入规模超限 | 算法模块内 parse 函数拦截 |
+| E-004 | 数值超范围 | 算法模块内 parse 函数拦截 |
+| E-005 | 图节点数不足或不连通 | 算法模块内 parse 函数拦截 |
+| E-006 | 算法运行时异常 | 算法模块 try-catch,自动调用 reset() |
+| E-007 | 浏览器不支持 Canvas | HTML `<canvas>` 内 fallback 文本 |
 
-错误文案统一为常量，使用通俗中文，不暴露技术细节。
+错误文案统一为常量(`ERR.XXX` 或 `ERROR_MESSAGES.XXX`),使用通俗中文,不暴露技术细节。
 
 ## 不实现的功能（本阶段）
 
-以下为扩展需求，不要主动实现，但接口已预留：
-- EXT-2：单步执行、暂停、上一步、速度调节（StepManager 内部接口已预留，只差 UI 绑定）
-- EXT-3：Logger.export() 导出日志
-- EXT-4：同类算法对比
-- EXT-5：LocalStorage 保存自定义测试数据
-- EXT-7：题目讲解模式
+设计稿曾列出多项扩展需求,本期未实现。**已经实现的项**:
+- EXT-2(单步执行/暂停/上一步/速度调节):**已实现**——三个算法均有 ⏮◀▶⏭ 控件,quicksort 有速度滑块
+
+未实现的扩展需求:
+- EXT-3:Logger.export() 导出日志
+- EXT-4:同类算法对比
+- EXT-5:LocalStorage 保存自定义测试数据
+- EXT-7:题目讲解模式
 
 ## 验收清单（截止前必须全部通过）
 
@@ -300,3 +315,4 @@ test: 增加汉诺塔测试用例
 | 2026-06-23 | 刘卓明 | 初版创建：依据《需求文档v0.1》《系统设计文档v0.1》起草整体结构、接口规约、验收清单 |
 | 2026-06-24 | 杨帆 | 对照 `js/common.js` 实际实现，发现初版接口规约（基于设计稿）与代码偏差较大；以附录形式追加"实际实现"清单，标注 `CanvasHelper`/`Validator`/`Logger` 未实现 |
 | 2026-06-26 | 刘卓明 | 整合附录回正文：用实际 API 直接覆盖"公共工具库接口规约"章节，附录删除；后续算法模块以正文为准，不再有两套规约并存 |
+| 2026-06-28 | 刘卓明 | 同步整轮冗余清理后的代码状态:① 公共 API 表删除 7 个已废弃接口(`$$`/`formatNumberArray`/`randomGraph`/`cloneMatrix`/`showInfo`/`showError`/`initAlgorithmPage`);② 修正 StepManager 调用约定为实际 API(`addStep` 而非 `record`,无 `clear`/`gotoStep`/`setSpeed`);③ 样式规范从深色玻璃拟态改为浅色 + 便当盒 + 毛玻璃;④ 标注 EXT-2 单步/暂停/速度已实现;⑤ 实现状态表更新为"全部完成" |
