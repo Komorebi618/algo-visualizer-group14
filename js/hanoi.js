@@ -24,7 +24,7 @@ window.Hanoi = (() => {
     DISK_MIN_WIDTH: 36,
     DISK_WIDTH_STEP: 14,
     PADDING_TOP: 56,
-    PADDING_BOTTOM: 24,
+    PADDING_BOTTOM: 44,
     HOVER_OFFSET: 28,
     BG_COLOR: 'rgba(255,255,255,0.02)',
     POLE_COLOR: '#94a3b8',
