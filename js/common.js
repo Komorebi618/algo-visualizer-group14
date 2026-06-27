@@ -2,7 +2,6 @@
 
 const Common = (() => {
     const $ = selector => document.querySelector(selector);
-    const $$ = selector => Array.from(document.querySelectorAll(selector));
 
     const createElement = (tag, attributes = {}, text = "") => {
         const element = document.createElement(tag);
@@ -36,11 +35,6 @@ const Common = (() => {
         return element;
     };
 
-    const formatNumberArray = numbers => {
-        if (!Array.isArray(numbers)) return "";
-        return numbers.join(", ");
-    };
-
     const parseNumberArray = rawInput => {
         if (typeof rawInput !== "string") {
             throw new TypeError("输入必须是字符串格式的数组数据，例如 3, 1, 4, 1");
@@ -67,46 +61,7 @@ const Common = (() => {
         return result;
     };
 
-    const randomGraph = ({ nodeCount = 6, edgeProbability = 0.4, minWeight = 1, maxWeight = 9 } = {}) => {
-        const nodes = Array.from({ length: nodeCount }, (_, index) => `N${index + 1}`);
-        const edges = [];
-        for (let i = 0; i < nodeCount; i += 1) {
-            for (let j = i + 1; j < nodeCount; j += 1) {
-                if (Math.random() < edgeProbability) {
-                    const weight = Math.floor(Math.random() * (maxWeight - minWeight + 1)) + minWeight;
-                    edges.push({ from: nodes[i], to: nodes[j], weight });
-                    edges.push({ from: nodes[j], to: nodes[i], weight });
-                }
-            }
-        }
-        return { nodes, edges };
-    };
-
-    const cloneMatrix = matrix => {
-        if (!Array.isArray(matrix)) return [];
-        return matrix.map(row => (Array.isArray(row) ? [...row] : row));
-    };
-
     const deepClone = value => JSON.parse(JSON.stringify(value));
-
-    const createMessageArea = (container, type, message) => {
-        clearChildren(container);
-        const messageElement = createElement("div", { class: `common-message common-message-${type}` }, message);
-        container.appendChild(messageElement);
-        return messageElement;
-    };
-
-    const showInfo = (selector, message) => {
-        const container = $(selector);
-        if (!container) return;
-        createMessageArea(container, "info", message);
-    };
-
-    const showError = (selector, message) => {
-        const container = $(selector);
-        if (!container) return;
-        createMessageArea(container, "error", message);
-    };
 
     /**
      * 在页面右下角弹出 Toast 提示，3.5s 后自动消失。
@@ -234,38 +189,18 @@ const Common = (() => {
         return cases[index] || null;
     };
 
-    const initAlgorithmPage = ({ title, description, complexity, canvasId, controlContainerId, testcases = [] } = {}) => {
-        const pageTitle = $(".page-title");
-        const descriptionContainer = $(".page-description");
-        const complexityContainer = $(".page-complexity");
-        if (pageTitle) pageTitle.textContent = title || "算法可视化";
-        if (descriptionContainer) descriptionContainer.textContent = description || "请在页面中选择测试用例并开始算法演示。";
-        if (complexityContainer) complexityContainer.textContent = complexity || "时间复杂度、空间复杂度信息将在此显示。";
-        return {
-            canvasElement: $(canvasId),
-            controlContainer: $(controlContainerId),
-            testcases,
-        };
-    };
-
     return {
-        $, $$,
+        $,
         createElement,
         clearChildren,
         addEvent,
         parseNumberArray,
-        formatNumberArray,
         randomIntegerArray,
-        randomGraph,
-        cloneMatrix,
         deepClone,
-        showInfo,
-        showError,
         showToast,
         StepManager,
         populateTestcaseSelect,
         getSelectedTestcase,
-        initAlgorithmPage,
     };
 })();
 
