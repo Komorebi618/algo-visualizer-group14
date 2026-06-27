@@ -317,7 +317,7 @@ let elNodeCount, elSourceNode, elEdgeList;
 let elBtnRun, elBtnRandom, elBtnReset;
 let elBtnFirst, elBtnPrev, elBtnPlayPause, elBtnLast;
 let elProgressFill, elStepCounter, elStepDesc, elStepLog;
-let elResultCard, elResultTable, elTestcaseSelect, elTestcaseDesc, elBtnLoadTestcase;
+let elResultCard, elResultTable, elTestcaseSelect, elTestcaseDesc;
 
 // ── 节点坐标计算 ──────────────────────────────────────────────
 
@@ -500,10 +500,23 @@ function updateDesc(desc, idx, total) {
   elStepCounter.textContent  = `${idx + 1} / ${total}`;
   updatePlayPauseBtn();
   appendLogEntry(idx + 1, desc);
+  // 同步边界按钮禁用状态：第 0 步禁用 ⏮/◀，末步禁用 ⏭
+  elBtnFirst.disabled = (idx === 0);
+  elBtnPrev.disabled  = (idx === 0);
+  elBtnLast.disabled  = (idx === total - 1);
 }
 
 function updatePlayPauseBtn() {
   elBtnPlayPause.textContent = sm && sm.isPlaying ? '⏸' : '▶';
+}
+
+/** 批量设置播放控制按钮的可用状态（载入数据前全部禁用） */
+function setControlsEnabled(enabled) {
+  elBtnFirst.disabled     = !enabled;
+  elBtnPrev.disabled      = !enabled;
+  elBtnPlayPause.disabled = !enabled;
+  elBtnLast.disabled      = !enabled;
+  elBtnReset.disabled     = !enabled;
 }
 
 function appendLogEntry(stepNum, desc) {
@@ -670,6 +683,7 @@ function run() {
   }
 
   renderResultTable(result.distances, result.previous, sourceId, parsed.graph.nodes);
+  setControlsEnabled(true);
   sm.play();
   updatePlayPauseBtn();
 }
@@ -683,6 +697,7 @@ function reset() {
   elProgressFill.style.width    = '0%';
   elStepCounter.textContent     = '0 / 0';
   elResultCard.style.display    = 'none';
+  setControlsEnabled(false);
   updatePlayPauseBtn();
 }
 
@@ -721,6 +736,7 @@ function loadSelectedTestcase() {
   updateSourceSelect(tc.nodeCount);
   elSourceNode.value = tc.sourceId;
   elEdgeList.value   = tc.edges;
+  elTestcaseDesc.textContent = tc.description;
 }
 
 // ── init ──────────────────────────────────────────────────────
@@ -747,7 +763,6 @@ function init() {
   elResultTable  = document.getElementById('resultTable');
   elTestcaseSelect    = document.getElementById('testcaseSelect');
   elTestcaseDesc      = document.getElementById('testcaseDesc');
-  elBtnLoadTestcase   = document.getElementById('btnLoadTestcase');
 
   sm = new MiniStepManager(renderState, updateDesc);
 
@@ -796,8 +811,15 @@ function init() {
   });
 
   renderTestcaseList();
-  elTestcaseSelect.addEventListener('change', updateTestcaseDesc);
-  elBtnLoadTestcase.addEventListener('click', loadSelectedTestcase);
+  // 切换下拉框直接载入用例（仅填充输入框，不自动运行）
+  elTestcaseSelect.addEventListener('change', () => {
+    reset();
+    loadSelectedTestcase();
+  });
+
+  // 首屏：回填默认选中用例的输入框 + 描述文案，但不运行算法（保持禁用状态）
+  loadSelectedTestcase();
+  setControlsEnabled(false);
 }
 
 window.addEventListener('load', init);

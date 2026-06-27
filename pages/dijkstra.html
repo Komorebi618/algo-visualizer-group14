@@ -92,7 +92,6 @@
               <select id="testcaseSelect"></select>
               <span class="input-hint" id="testcaseDesc"></span>
             </div>
-            <button class="btn btn-ghost" id="btnLoadTestcase" style="margin-top:8px;">载入用例</button>
           </div>
 
         </div>
@@ -105,7 +104,7 @@
           <!-- 标题行 -->
           <div class="algo-header">
             <span class="algo-title">可视化面板</span>
-            <button class="btn btn-ghost btn-sm" id="btnReset">↺ 重置</button>
+            <button class="btn btn-ghost btn-sm" id="btnReset" disabled>↺ 重置</button>
           </div>
 
           <!-- Canvas -->
@@ -117,10 +116,10 @@
 
           <!-- 播放控制条 -->
           <div class="playback-bar">
-            <button class="btn btn-icon" id="btnFirst" title="回到开始">⏮</button>
-            <button class="btn btn-icon" id="btnPrev" title="上一步">◀</button>
-            <button class="btn btn-icon" id="btnPlayPause" title="播放/暂停">▶</button>
-            <button class="btn btn-icon" id="btnLast" title="跳到末尾">⏭</button>
+            <button class="btn btn-icon" id="btnFirst" disabled title="回到开始">⏮</button>
+            <button class="btn btn-icon" id="btnPrev" disabled title="上一步">◀</button>
+            <button class="btn btn-icon" id="btnPlayPause" disabled title="播放/暂停">▶</button>
+            <button class="btn btn-icon" id="btnLast" disabled title="跳到末尾">⏭</button>
             <div class="progress" id="progressBar">
               <div class="progress-fill" id="progressFill" style="width:0%"></div>
             </div>
@@ -149,7 +148,7 @@
     </div>
 
     <footer>算法可视化系统 &copy; 2026 &nbsp;|&nbsp; 第14组</footer>
-+  </div>
+  </div>
 
   <script src="../js/common.js" defer></script>
   <script src="../js/dijkstra.js" defer></script>

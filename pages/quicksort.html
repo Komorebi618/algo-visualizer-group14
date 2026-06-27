@@ -45,15 +45,15 @@
                         </p>
                         <div class="complexity" style="margin-top:12px;">
                             <div class="complexity-item">
-                                <span class="label">时间复杂度（平均）</span>
+                                <span class="label">时间复杂度<br>（平均）</span>
                                 <span class="value">O(n log n)</span>
                             </div>
                             <div class="complexity-item">
-                                <span class="label">时间复杂度（最坏）</span>
+                                <span class="label">时间复杂度<br>（最坏）</span>
                                 <span class="value">O(n²)</span>
                             </div>
                             <div class="complexity-item">
-                                <span class="label">空间复杂度</span>
+                                <span class="label">空间复杂度<br>&nbsp;</span>
                                 <span class="value">O(log n)</span>
                             </div>
                         </div>
@@ -86,7 +86,6 @@
                             <select id="qs-testcase-select"></select>
                             <span class="input-hint" id="qs-testcase-desc"></span>
                         </div>
-                        <button class="btn btn-ghost" id="qs-load-testcase" style="margin-top:8px;">载入用例</button>
                     </div>
 
                     <hr style="border:none;border-top:1px solid var(--glass-border)">
@@ -119,7 +118,9 @@
                     <!-- Canvas 画布 -->
                     <div class="canvas-stage" id="qs-canvas-stage">
                         <canvas id="qs-canvas"></canvas>
-                        
+                        <div id="qs-placeholder" style="position:absolute;color:var(--muted);font-size:0.9rem;">
+                            请选择测试用例或手动输入数据，然后点击「开始排序」
+                        </div>
                     </div>
 
                     <!-- 播放控制条 -->
@@ -159,8 +160,8 @@
         <footer>算法可视化系统 &copy; 2026 &nbsp;|&nbsp; 第14组</footer>
     </div>
 
-    <script src="../data/testcases.js"></script>
-    <script src="../js/common.js"></script>
-    <script src="../js/quicksort.js"></script>
+    <script src="../data/testcases.js" defer></script>
+    <script src="../js/common.js" defer></script>
+    <script src="../js/quicksort.js" defer></script>
 </body>
 </html>
