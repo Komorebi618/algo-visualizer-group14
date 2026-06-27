@@ -16,13 +16,6 @@
  *   - 递归处理 [low, pivotIdx-1] 和 [pivotIdx+1, high] 两个子数组
  */
 
-/**
- * TODO:
- * 1. 没有预置的测试用例
- * 2. 载入用例不知道如何使用；随机按钮没有反应
- * 3. 手动输入数组后，点击开始排序没有反应
- */
-
 const QuickSort = (() => {
 
     /* ───────────────────────────────────────────
@@ -334,13 +327,14 @@ const QuickSort = (() => {
         const speedLabel   = Common.$("#qs-speed-label");        // 速度数值显示
         const selectEl     = Common.$("#qs-testcase-select");    // 测试用例下拉
         const testcaseDesc = Common.$("#qs-testcase-desc");      // 用例说明文字
+        const stepDescEl   = Common.$("#qs-step-desc");          // 当前步骤说明卡片
 
         const btnStart  = Common.$("#qs-start");
         const btnRandom = Common.$("#qs-random");
-        const btnLoad   = Common.$("#qs-load-testcase");
+        const btnFirst  = Common.$("#qs-btn-first");
         const btnPrev   = Common.$("#qs-btn-prev");
         const btnPlay   = Common.$("#qs-btn-play");
-        const btnNext   = Common.$("#qs-btn-next");
+        const btnLast   = Common.$("#qs-btn-last");
         const btnReset  = Common.$("#qs-btn-reset");
 
         let steps     = [];    // 当前算法生成的全部步骤
@@ -402,15 +396,19 @@ const QuickSort = (() => {
             renderStep(canvas, steps[idx]);
             updateProgress(idx);
             appendLog(idx, steps[idx].desc);
+            if (stepDescEl) stepDescEl.textContent = steps[idx].desc; // 同步"当前步骤"卡片
+            if (btnFirst) btnFirst.disabled = (idx === 0);
             btnPrev.disabled = (idx === 0);                    // 第一步不能再上一步
-            btnNext.disabled = (idx === steps.length - 1);    // 最后一步不能再下一步
+            const atLast = (idx === steps.length - 1);
+            if (btnLast) btnLast.disabled = atLast;            // 最后一步不能再下一步（保留命名一致）
         }
 
         /** 批量设置播放控制按钮的可用状态（载入数据前全部禁用）。 */
         function setControlsEnabled(enabled) {
+            if (btnFirst) btnFirst.disabled = !enabled;
             btnPrev.disabled  = !enabled;
             btnPlay.disabled  = !enabled;
-            btnNext.disabled  = !enabled;
+            if (btnLast)  btnLast.disabled  = !enabled;
             btnReset.disabled = !enabled;
         }
 
@@ -422,7 +420,24 @@ const QuickSort = (() => {
         function stopPlay() {
             isPlaying = false;
             manager.pause();           // 关键：清掉 StepManager 内部的 timer
-            btnPlay.textContent = "▶ 播放";
+            btnPlay.textContent = "▶";
+        }
+
+        /**
+         * 启动自动播放：若已在最后一步则从头播放，按当前速度推进。
+         * 由「开始排序」「随机生成」「▶ 播放」三处复用。
+         */
+        function startPlay() {
+            if (!steps.length) return;
+            // 若已在最后一步，从头开始播放（重置到 -1，_advance 内会先 next() 到 0）
+            if (manager.currentIndex >= steps.length - 1) {
+                manager.currentIndex = -1;
+            }
+            isPlaying = true;
+            btnPlay.textContent = "⏸";
+            manager.speed = Math.max(50, getSpeedMs());
+            manager.isPlaying = true;
+            manager._advance();
         }
 
         /**
@@ -462,15 +477,16 @@ const QuickSort = (() => {
             manager.setSteps(steps);
 
             stepLog.innerHTML = "";
-            placeholder.style.display = "none"; // 隐藏占位提示
+            if (placeholder) placeholder.style.display = "none"; // 隐藏占位提示（HTML 中无该元素时跳过）
             resizeCanvas();
             showStep(0);
             manager.currentIndex = 0;
 
             setControlsEnabled(true);
             btnPrev.disabled = true; // 第一步时"上一步"始终禁用
+            if (btnFirst) btnFirst.disabled = true;
 
-            dataDisplay.textContent = `输入：[ ${arr.join(", ")} ]`;
+            if (dataDisplay) dataDisplay.textContent = `输入：[ ${arr.join(", ")} ]`;
         }
 
         /**
@@ -512,31 +528,31 @@ const QuickSort = (() => {
 
         // ── 事件绑定 ──
 
-        // 「开始排序」：校验输入后生成步骤并载入
+        // 「开始排序」：校验输入后生成步骤并立即自动播放
         btnStart.addEventListener("click", () => {
             const arr = parseInput();
-            if (arr) loadSteps(arr);
+            if (!arr) return;
+            loadSteps(arr);
+            startPlay();
         });
 
-        // 「随机生成」：生成 8 个 1-99 的随机整数，填入输入框并直接开始
+        // 「随机生成」：生成 8 个 1-99 的随机整数，填入输入框并仅在 Canvas 绘制（不自动播放）
         btnRandom.addEventListener("click", () => {
             const arr = Common.randomIntegerArray(8, 1, 99);
             inputEl.value = arr.join(", ");
             loadSteps(arr);
         });
 
-        // 「载入测试用例」：从下拉选中的预置用例读取数据并开始
-        btnLoad.addEventListener("click", () => {
-            const tc = Common.getSelectedTestcase(selectEl, window.Testcases.quicksort);
-            if (!tc) return;
-            inputEl.value = tc.input.join(", ");
-            loadSteps([...tc.input]); // 展开为新数组，避免修改原始用例数据
-        });
+        // 「载入测试用例」：使用下拉框 change 事件直接载入（仅渲染不播放），由「开始排序」启动动画。
 
-        // 测试用例下拉切换时，同步更新下方的用例说明文字
+        // 测试用例下拉切换时：同步描述文案 + 回填输入框 + 在 Canvas 绘制（不自动播放）
         selectEl.addEventListener("change", () => {
             const tc = Common.getSelectedTestcase(selectEl, window.Testcases.quicksort);
             testcaseDesc.textContent = tc ? tc.description : "";
+            if (!tc) return;
+            stopPlay();
+            inputEl.value = tc.input.join(", ");
+            loadSteps([...tc.input]); // 展开为新数组，避免修改原始用例数据
         });
 
         // 「上一步」：停止自动播放，手动退一步
@@ -546,28 +562,36 @@ const QuickSort = (() => {
         });
 
         // 「下一步」：停止自动播放，手动进一步
-        btnNext.addEventListener("click", () => {
-            stopPlay();
-            manager.next();
-        });
+        // 注：HTML 中按钮 id 现为 qs-btn-last（⏭ 跳到末尾），原 btnNext 已废弃。
+        // 为兼容性保留快捷键，但去除对不存在的 btnNext 的事件绑定。
+
+        // 「回到开始」⏮：跳到第 0 步
+        if (btnFirst) {
+            btnFirst.addEventListener("click", () => {
+                stopPlay();
+                if (!steps.length) return;
+                manager.currentIndex = -1;
+                manager.next();
+            });
+        }
+
+        // 「跳到末尾」⏭：直接渲染最后一步（不播放中间帧）
+        if (btnLast) {
+            btnLast.addEventListener("click", () => {
+                stopPlay();
+                if (!steps.length) return;
+                const last = steps.length - 1;
+                manager.currentIndex = last;
+                showStep(last);
+            });
+        }
 
         // 「播放 / 暂停」：切换自动播放状态
         btnPlay.addEventListener("click", () => {
             if (isPlaying) {
                 stopPlay();
             } else {
-                // 若已在最后一步，从头开始播放（重置到 -1，_advance 内会先 next() 到 0）
-                if (manager.currentIndex >= steps.length - 1) {
-                    manager.currentIndex = -1;
-                }
-                isPlaying = true;
-                btnPlay.textContent = "⏸ 暂停";
-                // 直接调用 _advance：StepManager.play() 在 isPlaying=true 时会被 guard 提前返回，
-                // 这里我们已经把 isPlaying 置为 true 用于 UI，但 manager 内部的 isPlaying 还是 false。
-                // 同步设置 manager.isPlaying = true 后再 _advance 推进，保证可以连续暂停-播放。
-                manager.speed = Math.max(50, getSpeedMs());
-                manager.isPlaying = true;
-                manager._advance();
+                startPlay();
             }
         });
 
@@ -579,7 +603,8 @@ const QuickSort = (() => {
             manager.onStep(steps[0], 0); // 手动触发第 0 步渲染
             manager.currentIndex = 0;
             btnPrev.disabled = true;
-            btnNext.disabled = (steps.length <= 1);
+            if (btnFirst) btnFirst.disabled = true;
+            if (btnLast)  btnLast.disabled  = (steps.length <= 1);
         });
 
         // 速度滑块：实时更新标签；若正在播放，以新速度无缝继续
@@ -623,9 +648,12 @@ const QuickSort = (() => {
             window.Testcases.quicksort,
             tc => tc.name // 将 tc.name 作为 <option> 显示文字
         );
-        // 显示第一条用例的说明（初始加载时下拉值默认为第 0 项）
-        const firstTc = window.Testcases.quicksort[0];
-        if (firstTc) testcaseDesc.textContent = firstTc.description;
+        // 首屏处理：回填默认选中用例的输入框 + 描述文案，但不渲染 Canvas（保留 placeholder，与 hanoi 行为一致）
+        const initTc = Common.getSelectedTestcase(selectEl, window.Testcases.quicksort);
+        if (initTc) {
+            inputEl.value = initTc.input.join(", ");
+            testcaseDesc.textContent = initTc.description;
+        }
     }
 
     // 若 DOM 尚未就绪则延迟执行，否则立即执行（处理 defer/async 脚本的边界情况）
