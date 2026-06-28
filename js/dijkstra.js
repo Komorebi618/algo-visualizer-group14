@@ -164,31 +164,7 @@ const ERR = {
   SOURCE_OUT_OF_RANGE:  (id, n) => `源节点 ${id} 超出范围（0 ~ ${n - 1}）`,
 };
 
-// ── 预置测试用例 ──────────────────────────────────────────
-
-const TESTCASES = [
-  {
-    name: '典型 5 节点图',
-    description: '多条竞争路径，验证松弛更新',
-    nodeCount: 5,
-    sourceId: 0,
-    edges: '0 1 4\n0 2 1\n2 1 2\n1 3 1\n2 3 5\n3 4 3',
-  },
-  {
-    name: '含不可达节点',
-    description: '节点 3 孤立，验证 Infinity 保持',
-    nodeCount: 4,
-    sourceId: 0,
-    edges: '0 1 2\n1 2 3',
-  },
-  {
-    name: '单条路径',
-    description: '边界：线性图，无分叉',
-    nodeCount: 3,
-    sourceId: 0,
-    edges: '0 1 5\n1 2 3',
-  },
-];
+// ── 预置测试用例（由 data/testcases.js 提供，window.Testcases.dijkstra） ──
 
 // ── Canvas 颜色常量（对应 style.css 中的 CSS 变量值） ────────
 
@@ -625,7 +601,8 @@ function resizeCanvas() {
 
 function renderTestcaseList() {
   elTestcaseSelect.innerHTML = '';
-  TESTCASES.forEach((tc, idx) => {
+  const cases = (window.Testcases && window.Testcases.dijkstra) || [];
+  cases.forEach((tc, idx) => {
     const opt = document.createElement('option');
     opt.value = idx;
     opt.textContent = `${tc.name}（${tc.nodeCount}V）`;
@@ -635,7 +612,8 @@ function renderTestcaseList() {
 
 function loadSelectedTestcase() {
   const idx = parseInt(elTestcaseSelect.value, 10);
-  const tc = TESTCASES[idx];
+  const cases = (window.Testcases && window.Testcases.dijkstra) || [];
+  const tc = cases[idx];
   if (!tc) return;
   elNodeCount.value = tc.nodeCount;
   updateSourceSelect(tc.nodeCount);

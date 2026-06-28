@@ -34,37 +34,28 @@ window.Testcases = {
         }
     ],
 
-    /* ── Dijkstra 最短路径：2 条测试用例 ── */
+    /* ── Dijkstra 最短路径：3 条测试用例 ── */
     dijkstra: [
         {
-            name: "小型有向图",
-            nodes: ["A", "B", "C", "D", "E"],
-            edges: [
-                { from: "A", to: "B", weight: 2 },
-                { from: "A", to: "C", weight: 5 },
-                { from: "B", to: "C", weight: 1 },
-                { from: "B", to: "D", weight: 4 },
-                { from: "C", to: "E", weight: 3 },
-                { from: "D", to: "E", weight: 1 }
-            ],
-            source: "A",
-            target: "E",
-            description: "经典 Dijkstra 最短路径示例，演示逐步更新最短距离。"
+            name: "典型 5 节点图",
+            description: "多条竞争路径，验证松弛更新。",
+            nodeCount: 5,
+            sourceId: 0,
+            edges: "0 1 4\n0 2 1\n2 1 2\n1 3 1\n2 3 5\n3 4 3"
         },
         {
-            name: "稀疏图",
-            nodes: ["S", "T", "U", "V", "W", "X"],
-            edges: [
-                { from: "S", to: "T", weight: 3 },
-                { from: "S", to: "U", weight: 1 },
-                { from: "T", to: "V", weight: 6 },
-                { from: "U", to: "V", weight: 2 },
-                { from: "U", to: "W", weight: 4 },
-                { from: "V", to: "X", weight: 1 }
-            ],
-            source: "S",
-            target: "X",
-            description: "稀疏图结构，测试 Dijkstra 算法在不同拓扑下的路径发现。"
+            name: "含不可达节点",
+            description: "节点 3 孤立，验证 Infinity 保持。",
+            nodeCount: 4,
+            sourceId: 0,
+            edges: "0 1 2\n1 2 3"
+        },
+        {
+            name: "单条路径",
+            description: "边界：线性图，无分叉。",
+            nodeCount: 3,
+            sourceId: 0,
+            edges: "0 1 5\n1 2 3"
         }
     ],
 
