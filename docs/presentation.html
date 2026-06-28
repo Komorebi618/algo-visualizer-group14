@@ -1,0 +1,1663 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>答辩演示 — 算法过程可视化系统</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    /* ============================================
+       答辩演示文档专属样式
+       与 ../css/style.css 共用 :root 设计 token
+       仅新增 .slide / .bento / .demo-cue 等演示场景类
+       ============================================ */
+    body {
+      padding: 0;
+      overflow: hidden;
+    }
+    .progress-top {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      background: var(--border);
+      z-index: 100;
+      display: flex;
+      gap: 2px;
+      padding: 0 2px;
+    }
+    .progress-segment {
+      flex: 1;
+      background: rgba(255,255,255,0.4);
+      transition: background 240ms ease;
+      cursor: pointer;
+      border-radius: 2px;
+    }
+    .progress-segment:hover { background: rgba(37,99,235,0.35); }
+    .progress-segment.done { background: var(--accent); }
+    .progress-segment.current {
+      background: var(--accent);
+      box-shadow: 0 0 0 2px rgba(37,99,235,0.25);
+    }
+    .deck {
+      display: flex;
+      flex-direction: row;
+      height: 100vh;
+      width: 100vw;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-snap-type: x mandatory;
+      scroll-behavior: smooth;
+    }
+    .deck::-webkit-scrollbar { height: 0; width: 0; }
+    .slide {
+      flex: 0 0 100vw;
+      min-width: 100vw;
+      width: 100vw;
+      height: 100vh;
+      scroll-snap-align: start;
+      scroll-snap-stop: always;
+      padding: 60px 56px 56px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      position: relative;
+      overflow-y: auto;
+    }
+    .slide::-webkit-scrollbar { width: 0; }
+    .slide-num {
+      font-family: var(--mono);
+      font-size: 0.74rem;
+      color: var(--muted);
+      letter-spacing: 0.18em;
+    }
+    .slide-title {
+      font-size: 1.9rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.25;
+    }
+    .slide-subtitle {
+      font-size: 1rem;
+      color: var(--text-secondary);
+      margin-top: -8px;
+      line-height: 1.6;
+    }
+    /* ----- Bento Grid ----- */
+    .bento {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      grid-auto-rows: minmax(120px, auto);
+      gap: 16px;
+      flex: 1;
+    }
+    .bento .panel,
+    .bento .card {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      border-radius: var(--radius-lg);
+    }
+    .span2 { grid-column: span 2; }
+    .span3 { grid-column: span 3; }
+    .span4 { grid-column: span 4; }
+    .row2  { grid-row: span 2; }
+    .row3  { grid-row: span 3; }
+    .card h3, .panel h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card .lead, .panel .lead {
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+      line-height: 1.65;
+    }
+    .card .meta, .panel .meta {
+      font-size: 0.82rem;
+      color: var(--muted);
+      font-family: var(--mono);
+    }
+    .kbd {
+      font-family: var(--mono);
+      font-size: 0.74rem;
+      padding: 2px 7px;
+      border-radius: 6px;
+      background: rgba(37,99,235,0.08);
+      color: var(--accent);
+      border: 1px solid rgba(37,99,235,0.16);
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 12px;
+      border-radius: var(--radius-pill);
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+    .pill-info    { background: var(--accent-soft);  color: var(--accent);  }
+    .pill-success { background: var(--success-soft); color: var(--success); }
+    .pill-warn    { background: var(--warning-soft); color: var(--warning); }
+    .pill-danger  { background: var(--danger-soft);  color: var(--danger);  }
+    .dot {
+      display: inline-block;
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      vertical-align: middle;
+    }
+    /* ----- Demo Cue Card ----- */
+    .demo-cue {
+      background: var(--warning-soft);
+      border: 2px solid var(--warning);
+      cursor: pointer;
+      transition: transform 240ms ease, box-shadow 240ms ease;
+      text-decoration: none;
+      color: inherit;
+    }
+    .demo-cue:hover { color: inherit; }
+    .demo-cue h3 { color: var(--warning); }
+    .demo-cue .lead { color: var(--text-primary); }
+    .demo-cue:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .slide.active .demo-cue {
+      animation: pulse 1.6s ease 1 both;
+    }
+    @keyframes pulse {
+      0%   { transform: scale(1); }
+      50%  { transform: scale(1.04); box-shadow: 0 12px 28px rgba(217,119,6,0.25); }
+      100% { transform: scale(1); }
+    }
+    /* ----- Cover ----- */
+    .cover {
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 32px;
+    }
+    .cover .hero-bars {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+      height: 100px;
+    }
+    .hero-bars span {
+      width: 18px;
+      background: linear-gradient(180deg, #3b82f6, #06b6d4);
+      border-radius: 6px 6px 2px 2px;
+      animation: bounce-bar 1.6s ease-in-out infinite;
+    }
+    .hero-bars span:nth-child(1) { animation-delay: 0s; }
+    .hero-bars span:nth-child(2) { animation-delay: 0.15s; }
+    .hero-bars span:nth-child(3) { animation-delay: 0.3s; background: linear-gradient(180deg, #a855f7, #6366f1); }
+    .hero-bars span:nth-child(4) { animation-delay: 0.45s; }
+    .hero-bars span:nth-child(5) { animation-delay: 0.6s; }
+    .hero-bars span:nth-child(6) { animation-delay: 0.75s; background: linear-gradient(180deg, #f59e0b, #f97316); }
+    .hero-bars span:nth-child(7) { animation-delay: 0.9s; }
+    @keyframes bounce-bar {
+      0%, 100% { height: 36px; }
+      50%      { height: 100px; }
+    }
+    .cover-title {
+      font-size: 3.2rem;
+      font-weight: 800;
+      letter-spacing: -1px;
+      line-height: 1.1;
+    }
+    .cover-sub {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      max-width: 560px;
+      line-height: 1.7;
+    }
+    .cover-meta {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    /* ----- Mini timeline (slide 5) ----- */
+    .timeline-frames {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      font-family: var(--mono);
+      font-size: 0.92rem;
+      color: var(--muted);
+    }
+    .timeline-frames .frame {
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      border: 2px solid var(--accent);
+      background: transparent;
+      transition: background 240ms ease;
+    }
+    .timeline-frames .frame.on { background: var(--accent); }
+    /* ----- 控件 ----- */
+    .pager {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      z-index: 90;
+      background: var(--glass-bg-strong);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-pill);
+      padding: 6px 8px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.86rem;
+      color: var(--text-secondary);
+      box-shadow: var(--shadow-md);
+    }
+    .pager button {
+      border: none;
+      background: transparent;
+      color: var(--text-primary);
+      cursor: pointer;
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      font-size: 0.95rem;
+      transition: background 200ms ease;
+    }
+    .pager button:hover { background: rgba(37,99,235,0.1); }
+    .pager .count {
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      padding: 0 6px;
+      color: var(--muted);
+      min-width: 52px;
+      text-align: center;
+    }
+    .hint {
+      position: fixed;
+      left: 24px;
+      bottom: 24px;
+      z-index: 90;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      font-size: 0.78rem;
+      color: var(--muted);
+      background: var(--glass-bg);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      padding: 6px 12px;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--border);
+    }
+    .hint .kbd { background: rgba(82,82,91,0.08); color: var(--text-secondary); border-color: rgba(82,82,91,0.16); }
+    /* ----- Jumper（快速跳转面板） ----- */
+    .jump-toggle {
+      position: fixed;
+      right: 24px;
+      top: 24px;
+      z-index: 95;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--glass-bg-strong);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      box-shadow: var(--shadow-md);
+      cursor: pointer;
+      font-size: 1rem;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 200ms ease;
+    }
+    .jump-toggle:hover { transform: scale(1.05); color: var(--accent); }
+    .jump-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.35);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .jump-overlay.open { display: flex; }
+    .jump-panel {
+      background: var(--glass-bg-strong);
+      backdrop-filter: var(--glass-blur-strong);
+      -webkit-backdrop-filter: var(--glass-blur-strong);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      padding: 24px;
+      width: min(720px, 100%);
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .jump-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .jump-panel-header h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 0;
+    }
+    .jump-panel-header .hint-text {
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    .jump-search {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.6);
+      font: inherit;
+      font-size: 0.95rem;
+      color: var(--text-primary);
+      outline: none;
+      transition: border-color 200ms ease, box-shadow 200ms ease;
+    }
+    .jump-search:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.18);
+    }
+    .jump-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 10px;
+      overflow-y: auto;
+      padding: 2px;
+    }
+    .jump-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 12px 14px;
+      background: rgba(255,255,255,0.55);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      cursor: pointer;
+      text-align: left;
+      font: inherit;
+      transition: all 200ms ease;
+    }
+    .jump-item:hover,
+    .jump-item.focused {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      transform: translateY(-1px);
+    }
+    .jump-item.current {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      box-shadow: 0 0 0 2px rgba(37,99,235,0.2);
+    }
+    .jump-item .idx {
+      font-family: var(--mono);
+      font-size: 0.74rem;
+      color: var(--accent);
+      letter-spacing: 0.1em;
+    }
+    .jump-item .ttl {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .jump-item .desc {
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    .jump-item.demo .idx::after {
+      content: '▶ DEMO';
+      margin-left: 6px;
+      padding: 1px 6px;
+      background: var(--warning-soft);
+      color: var(--warning);
+      border-radius: var(--radius-pill);
+      font-size: 0.66rem;
+      letter-spacing: 0.05em;
+    }
+    .jump-empty {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 24px;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+    /* ----- 内部列表 ----- */
+    ul.tight {
+      margin: 0; padding-left: 18px;
+      color: var(--text-secondary);
+      font-size: 0.92rem;
+      line-height: 1.7;
+    }
+    ul.tight li { margin: 4px 0; }
+    .stat {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--accent);
+      font-family: var(--mono);
+      line-height: 1;
+    }
+    .stat-label {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+    .legend {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+    }
+    .legend .item { display: inline-flex; align-items: center; gap: 6px; }
+    code.inline {
+      font-family: var(--mono);
+      font-size: 0.86rem;
+      background: rgba(37,99,235,0.08);
+      color: var(--accent);
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+    /* ----- Code Block（Slide 4~7 招牌代码片段） ----- */
+    .code-card { padding: 16px 18px; }
+    .code-card h3 {
+      font-size: 0.95rem;
+      color: var(--text-primary);
+    }
+    .code-card .code-source {
+      font-size: 0.72rem;
+      color: var(--muted);
+      font-family: var(--mono);
+      margin-top: -2px;
+      letter-spacing: 0.04em;
+    }
+    .code-block {
+      margin: 8px 0 0;
+      padding: 12px 14px;
+      background: rgba(15, 23, 42, 0.94);
+      color: var(--canvas-text);
+      font-family: var(--mono);
+      font-size: 0.76rem;
+      line-height: 1.7;
+      border-radius: 10px;
+      overflow-x: auto;
+      white-space: pre;
+      tab-size: 2;
+    }
+    .code-block .hl {
+      display: block;
+      background: rgba(37, 99, 235, 0.32);
+      border-left: 2px solid var(--accent);
+      padding-left: 8px;
+      margin-left: -10px;
+      margin-right: -14px;
+      padding-right: 14px;
+    }
+    .code-block .cmt { color: #94a3b8; }
+    .code-caption {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 8px;
+      line-height: 1.6;
+    }
+    .code-caption strong { color: var(--accent); }
+    /* 主卡内的"提纲"代码块 —— 比右下"细节"代码卡更紧凑 */
+    .code-block.compact {
+      font-size: 0.7rem;
+      line-height: 1.55;
+      padding: 10px 12px;
+      margin-top: 8px;
+    }
+    .code-block .api-name { color: #fde68a; }
+    .code-block .kw       { color: #93c5fd; }
+    /* Git 分支图（Slide 8）—— SVG 版 */
+    .git-graph-svg {
+      width: 100%;
+      margin-top: 10px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.55), rgba(255,255,255,0.3));
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px 10px;
+      box-shadow: var(--shadow-sm);
+    }
+    .git-graph-svg svg { display: block; width: 100%; height: auto; }
+    .git-graph-svg .branch-line {
+      stroke-width: 3;
+      fill: none;
+      stroke-linecap: round;
+    }
+    .git-graph-svg .commit-dot {
+      stroke: #fff;
+      stroke-width: 2;
+    }
+    .git-graph-svg .commit-dot.main {
+      stroke-width: 3;
+      filter: drop-shadow(0 2px 4px rgba(37,99,235,0.3));
+    }
+    .git-graph-svg .branch-label {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .git-graph-svg .pr-badge {
+      font-family: var(--ui-font);
+      font-size: 9.5px;
+      font-weight: 700;
+      fill: #fff;
+    }
+    .git-graph-svg .pr-badge-bg {
+      fill: var(--accent);
+      filter: drop-shadow(0 2px 4px rgba(37,99,235,0.35));
+    }
+    .git-graph-svg .merge-arrow {
+      stroke: var(--accent);
+      stroke-width: 1.5;
+      fill: none;
+      stroke-dasharray: 3 3;
+      opacity: 0.6;
+    }
+    .git-graph-svg .stage-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      fill: var(--muted);
+    }
+    .branch-legend {
+      display: flex; gap: 14px; flex-wrap: wrap;
+      margin-top: 10px; font-size: 0.78rem; color: var(--text-secondary);
+    }
+    .branch-legend .b-item { display: inline-flex; align-items: center; gap: 6px; }
+    .branch-legend .b-dot {
+      width: 12px; height: 12px; border-radius: 50%;
+      box-shadow: 0 1px 3px rgba(24,24,27,0.15);
+    }
+    /* 紧凑 demo-cue（Slide 5/6/7 用） */
+    .demo-cue.demo-cue-compact { padding: 14px 16px; gap: 6px; }
+    .demo-cue-compact h3 { font-size: 0.95rem; margin-bottom: 2px; }
+    .demo-cue-compact .lead { font-size: 0.82rem; margin: 0; line-height: 1.55; }
+    .demo-cue-compact .meta { font-size: 0.74rem; margin: 0; }
+    .demo-cue-compact .row  { margin-top: 6px; gap: 6px; flex-wrap: wrap; }
+    .demo-cue-compact .pill { font-size: 0.7rem; padding: 2px 9px; }
+    /* 汉诺塔 ASCII 塔状态图 */
+    .tower-ascii {
+      font-family: var(--mono);
+      font-size: 0.86rem;
+      background: rgba(15, 23, 42, 0.06);
+      padding: 12px 14px;
+      border-radius: 8px;
+      border: 1px dashed var(--border);
+      white-space: pre;
+      line-height: 1.75;
+      color: var(--text-secondary);
+      margin-top: 10px;
+    }
+    .tower-ascii .tower-disk  { color: var(--accent); font-weight: 700; }
+    .tower-ascii .tower-empty { color: var(--muted); }
+    .tower-ascii .tower-arrow { color: var(--warning); font-weight: 700; }
+    /* 汉诺塔步数对照横排小表 */
+    .steps-table {
+      display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px;
+    }
+    .steps-table .cell {
+      font-family: var(--mono); font-size: 0.78rem;
+      padding: 4px 10px; border-radius: var(--radius-pill);
+      background: var(--accent-soft); color: var(--accent);
+    }
+    .steps-table .cell strong { color: var(--warning); }
+    .arch-row {
+      display: grid;
+      grid-template-columns: 110px 1fr;
+      gap: 10px;
+      align-items: center;
+      padding: 8px 12px;
+      background: rgba(255,255,255,0.45);
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+    .arch-row .layer {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .arch-row .desc {
+      font-size: 0.84rem;
+      color: var(--text-secondary);
+    }
+    /* ----- 架构图（Slide 3 五层架构） ----- */
+    .arch-diagram {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0;
+      margin-top: 8px;
+    }
+    .arch-layer {
+      display: grid;
+      grid-template-columns: 36px 110px 1fr;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: rgba(255,255,255,0.55);
+      border: 1px solid var(--border);
+      border-left: 5px solid var(--accent);
+      border-radius: 10px;
+      box-shadow: var(--shadow-sm);
+      transition: transform 200ms ease, box-shadow 200ms ease;
+    }
+    .arch-layer:hover {
+      transform: translateX(2px);
+      box-shadow: var(--shadow-md);
+    }
+    .arch-layer .badge-num {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-family: var(--mono);
+      font-weight: 700;
+      font-size: 0.82rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .arch-layer .layer-name {
+      font-family: var(--mono);
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: var(--accent);
+      letter-spacing: 0.04em;
+    }
+    .arch-layer .layer-desc {
+      font-size: 0.84rem;
+      color: var(--text-secondary);
+      line-height: 1.55;
+    }
+    .arch-layer.l1 { border-left-color: #2563eb; }
+    .arch-layer.l1 .badge-num,
+    .arch-layer.l1 .layer-name { color: #2563eb; }
+    .arch-layer.l1 .badge-num { background: rgba(37,99,235,0.12); }
+
+    .arch-layer.l2 { border-left-color: #7c3aed; }
+    .arch-layer.l2 .badge-num,
+    .arch-layer.l2 .layer-name { color: #7c3aed; }
+    .arch-layer.l2 .badge-num { background: rgba(124,58,237,0.12); }
+
+    .arch-layer.l3 { border-left-color: #0891b2; }
+    .arch-layer.l3 .badge-num,
+    .arch-layer.l3 .layer-name { color: #0891b2; }
+    .arch-layer.l3 .badge-num { background: rgba(8,145,178,0.12); }
+
+    .arch-layer.l4 { border-left-color: #d97706; }
+    .arch-layer.l4 .badge-num,
+    .arch-layer.l4 .layer-name { color: #d97706; }
+    .arch-layer.l4 .badge-num { background: rgba(217,119,6,0.12); }
+
+    .arch-layer.l5 { border-left-color: #16a34a; }
+    .arch-layer.l5 .badge-num,
+    .arch-layer.l5 .layer-name { color: #16a34a; }
+    .arch-layer.l5 .badge-num { background: rgba(22,163,74,0.12); }
+
+    .arch-arrow {
+      align-self: center;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      line-height: 1;
+      padding: 4px 0;
+      letter-spacing: 0.08em;
+      opacity: 0.7;
+      user-select: none;
+    }
+    .arch-arrow::before {
+      content: '▼ depends on';
+    }
+    .arch-side-note {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 12px;
+      padding: 8px 12px;
+      background: var(--accent-soft);
+      border-radius: 8px;
+      font-size: 0.82rem;
+      color: var(--accent);
+    }
+    .arch-side-note strong { color: var(--accent); }
+    .footer-thanks {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .thank-chip {
+      flex: 1 1 0;
+      padding: 14px 16px;
+      background: var(--glass-bg-soft);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      text-align: center;
+    }
+    .thank-chip .name { font-weight: 700; color: var(--text-primary); }
+    .thank-chip .role { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
+    @media print {
+      .deck {
+        height: auto;
+        width: auto;
+        overflow: visible;
+        flex-direction: column;
+      }
+      .slide {
+        flex: none;
+        width: auto;
+        min-width: auto;
+        page-break-after: always;
+        height: auto;
+      }
+      .pager, .hint, .progress-top, .jump-toggle, .jump-overlay { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="progress-top" id="progressTop"></div>
+  <div class="deck" id="deck">
+    <!-- ============ Slide 1 / 封面 ============ -->
+    <section class="slide cover" data-index="0">
+      <div class="slide-num">01 / 10 · 课程设计答辩</div>
+      <div class="hero-bars">
+        <span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span>
+      </div>
+      <h1 class="cover-title">算法过程<br>可视化系统</h1>
+      <p class="cover-sub">把抽象的算法过程，变成看得见的动画。<br>纯前端实现，双击即用。</p>
+      <div class="cover-meta">
+        <span class="pill pill-info">快速排序</span>
+        <span class="pill pill-info">Dijkstra</span>
+        <span class="pill pill-info">汉诺塔</span>
+      </div>
+      <div class="cover-meta" style="margin-top:4px;">
+        <span class="meta" style="font-family:var(--mono);font-size:0.86rem;color:var(--muted);">第 14 组 · 刘卓明 · 杨帆 · 孙郭昕 · 2026.06</span>
+      </div>
+    </section>
+
+    <!-- ============ Slide 2 / 选题动机 + 项目范围（合并） ============ -->
+    <section class="slide" data-index="1">
+      <div class="slide-num">02 / 10 · MOTIVATION × SCOPE</div>
+      <h2 class="slide-title">需求 与 功能范围</h2>
+      <p class="slide-subtitle">为什么做？做什么？不做什么？</p>
+      <div class="bento" style="grid-template-rows: repeat(4, minmax(0, 1fr));">
+
+        <!-- 左半：动机大卡 (span2 row3) -->
+        <div class="panel span2 row3">
+          <div class="row" style="gap:8px;align-items:center;">
+            <span class="pill pill-warn">为什么</span>
+            <span class="pill pill-info">MOTIVATION</span>
+          </div>
+          <h3 style="margin-top:8px;">学算法时的"理解断层"</h3>
+          <p class="lead">
+            教材上的算法过程，大多是几张静态插图：一个箭头、一行伪代码。
+            学习者写完代码只能看到「最终结果」，中间发生了什么——
+            <strong>基准是怎么选的、指针怎么交换、节点怎么松弛、盘子怎么递归</strong>——
+            全靠脑补。
+          </p>
+          <p class="lead" style="margin-top:6px;">
+            为了解决这种「看着代码懂、合上书又忘」的问题。
+          </p>
+          <hr style="border:none;border-top:1px dashed var(--border);margin:10px 0;">
+          <p class="lead" style="color:var(--text-primary);">
+            <strong>我们做这样一个工具：</strong>让算法的中间状态<strong>可见、可暂停、可回放</strong>——
+            把抽象的"过程"变成看得见的动画。
+          </p>
+          <div class="legend" style="margin-top:auto;padding-top:10px;">
+            <span class="item">📖 教材静态插图无法表达"时间维度"</span>
+            <span class="item">🧠 中间状态全靠脑补、容易出错且无法验证</span>
+          </div>
+        </div>
+
+        <!-- 右上：我们要做的 (span2 row2) -->
+        <div class="card span2 row2">
+          <div class="row" style="gap:8px;align-items:center;">
+            <span class="pill pill-success">做什么</span>
+            <span class="pill pill-info">SCOPE</span>
+          </div>
+          <h3 style="margin-top:6px;">🎯 我们要做的</h3>
+          <ul class="tight">
+            <li>三个算法的<strong>过程</strong>可视化：快排、Dijkstra、汉诺塔</li>
+            <li>三种数据输入：手动 / 随机 / 预设用例</li>
+            <li>完整的播放控制：⏮ ◀ ▶/⏸ ⏭ + 进度条点击跳转</li>
+            <li>友好的错误提示：Toast 浮层，非法输入不崩溃</li>
+            <li>统一入口与一致风格：首页 + 三个算法页</li>
+          </ul>
+        </div>
+
+        <!-- 右中：我们没做的（横长条） -->
+        <div class="card span2">
+          <div class="row" style="gap:8px;align-items:center;">
+            <span class="pill pill-danger">不做什么</span>
+          </div>
+          <h3 style="margin-top:6px;">🚫 本期不做</h3>
+          <p class="lead" style="font-size:0.88rem;">
+            第 4 种算法、日志导出、同类算法对比、本地保存自定义数据、题目讲解模式——
+            <strong>保证三个核心算法的质量，而不是堆数量。</strong>
+          </p>
+        </div>
+
+        <!-- 底部三个交错小卡（凸显 Bento Grid） -->
+        <div class="card">
+          <h3>📦 交付物</h3>
+          <p class="lead" style="font-size:0.84rem;">
+            双击 index.html 即跑<br>
+            无构建 / 无 CDN<br>
+            <strong>10 条</strong>预置用例
+          </p>
+        </div>
+        <div class="card">
+          <h3>✅ 验收</h3>
+          <p class="lead" style="font-size:0.84rem;">
+            <strong>10 条</strong>验收清单<br>
+            2 浏览器实测<br>
+            含 ≥1 中等难度
+          </p>
+        </div>
+        <div class="card span2">
+          <h3>🌐 兼容矩阵</h3>
+          <p class="lead" style="font-size:0.84rem;">
+            实测通过 <strong>Chrome ≥ 99</strong> / <strong>Edge ≥ 99</strong>；<br>对
+            <code class="inline">ctx.roundRect</code>、<code class="inline">backdrop-filter</code>
+            等较新 API 已做降级处理。
+          </p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============ Slide 3 / 总体架构 ============ -->
+    <section class="slide" data-index="2">
+      <div class="slide-num">03 / 10 · ARCHITECTURE</div>
+      <h2 class="slide-title">总体架构：五层 + 数据驱动渲染</h2>
+      <p class="slide-subtitle">分层不耦合 + 算法只产数据、不画图——这是整个项目最重要的设计心法。</p>
+      <div class="bento" style="grid-template-columns: 2fr 1fr; grid-auto-rows: 1fr;">
+
+        <!-- 左半：五层架构图（贯穿三行）-->
+        <div class="panel" style="grid-row: span 3;">
+          <h3>🏛️ 五层架构（自上而下，上层依赖下层）</h3>
+          <div class="arch-diagram">
+            <div class="arch-layer l1">
+              <span class="badge-num">1</span>
+              <span class="layer-name">表现层</span>
+              <span class="layer-desc">index.html + pages/*.html + css/style.css</span>
+            </div>
+            <span class="arch-arrow"></span>
+            <div class="arch-layer l2">
+              <span class="badge-num">2</span>
+              <span class="layer-name">控制层</span>
+              <span class="layer-desc">js/*.js 中的事件绑定 与 run / reset 函数</span>
+            </div>
+            <span class="arch-arrow"></span>
+            <div class="arch-layer l3">
+              <span class="badge-num">3</span>
+              <span class="layer-name">业务逻辑层</span>
+              <span class="layer-desc">js/*.js 中的纯算法实现（快排 / Dijkstra / 汉诺塔）</span>
+            </div>
+            <span class="arch-arrow"></span>
+            <div class="arch-layer l4">
+              <span class="badge-num">4</span>
+              <span class="layer-name">公共服务层</span>
+              <span class="layer-desc">js/common.js：DOM 助手 + StepManager + showToast</span>
+            </div>
+            <span class="arch-arrow"></span>
+            <div class="arch-layer l5">
+              <span class="badge-num">5</span>
+              <span class="layer-name">数据层</span>
+              <span class="layer-desc">data/testcases.js + 运行时 steps 数组（内存）</span>
+            </div>
+          </div>
+          <div class="arch-side-note">
+            <span>⛓️</span>
+            <span><strong>依赖规则：</strong>上层调下层，下层不感知上层。三个算法模块互不依赖。</span>
+          </div>
+        </div>
+
+        <!-- 右半：三个设计原则板块（一列依次排开） -->
+        <div class="card">
+          <h3>💡 数据驱动渲染</h3>
+          <p class="lead">算法只产出"状态快照"，不直接画图——让算法和 UI 完全解耦。</p>
+        </div>
+        <div class="card">
+          <h3>🧩 依赖注入</h3>
+          <p class="lead">渲染回调由算法模块"注入"给 StepManager，公共层不知道画的是柱子还是节点。</p>
+        </div>
+        <div class="card">
+          <h3>📭 零外部依赖</h3>
+          <p class="lead">不用 jQuery / Vue / React / CDN，完全离线可运行。</p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============ Slide 4 / StepManager ============ -->
+    <section class="slide" data-index="3">
+      <div class="slide-num">04 / 10 · CORE</div>
+      <h2 class="slide-title">核心抽象：StepManager</h2>
+      <p class="slide-subtitle">把它想成一个"屏幕录像机 + 播放器"——算法负责演，它负责录，播放器负责快进慢放。</p>
+      <div class="bento">
+        <div class="panel span2 row2">
+          <h3>🎬 录像机 + 播放器</h3>
+          <p class="lead">
+            算法运行时，每走一步就调用一次 <code class="inline">sm.addStep({ state, description })</code>，
+            把"当前是什么样"录成一帧；算法跑完，<code class="inline">steps[]</code> 数组里就有了一整段录像。
+          </p>
+          <p class="lead" style="margin-top:6px;">
+            然后 <code class="inline">sm.play()</code> 自动顺序播放，<code class="inline">sm.next() / prev()</code>
+            手动单步——<strong>跟视频播放器是同一套心智模型</strong>。
+          </p>
+<pre class="code-block compact"><span class="cmt">// StepManager 类骨架（js/common.js · L97-168）</span>
+<span class="kw">class</span> StepManager {
+  <span class="api-name">addStep</span>(step)    { this.steps.push(step); }              <span class="cmt">// 录一帧</span>
+  <span class="api-name">setSteps</span>(steps)  { this.steps = [...steps]; ... }        <span class="cmt">// 整体替换</span>
+  <span class="api-name">next</span>()  { this.currentIndex++; this.onStep(...); }       <span class="cmt">// 推进</span>
+  <span class="api-name">prev</span>()  { this.currentIndex--; this.onStep(...); }       <span class="cmt">// 后退</span>
+  <span class="api-name">reset</span>() { this.pause(); this.currentIndex = -1; }        <span class="cmt">// 复位</span>
+  <span class="api-name">play</span>(speed) { this.isPlaying = true; this._advance(); } <span class="cmt">// 自动播</span>
+  <span class="api-name">pause</span>() { this.isPlaying = false; clearTimeout(...); }  <span class="cmt">// 暂停</span>
+}</pre>
+          <div class="timeline-frames" style="margin-top:12px;">
+            <span>frame</span>
+            <span class="frame" id="f0"></span>
+            <span class="frame" id="f1"></span>
+            <span class="frame" id="f2"></span>
+            <span class="frame" id="f3"></span>
+            <span class="frame" id="f4"></span>
+            <span style="color:var(--accent);font-weight:700;" id="frameLabel">0 / 5</span>
+          </div>
+        </div>
+        <div class="card span2">
+          <h3>🧰 关键 API <span class="pill pill-info">5 个</span></h3>
+          <ul class="tight" style="font-size:0.86rem;">
+            <li><code class="inline">addStep(step)</code> — 录入一帧</li>
+            <li><code class="inline">play(speed)</code> — 自动播放</li>
+            <li><code class="inline">next() / prev()</code> — 单步前进/后退</li>
+            <li><code class="inline">reset()</code> — 回到初始</li>
+            <li><code class="inline">currentIndex</code> — 任意跳帧</li>
+          </ul>
+        </div>
+        <div class="card code-card span2">
+          <h3>📜 自动播放引擎</h3>
+          <div class="code-source">js/common.js · L159-167</div>
+<pre class="code-block"><span class="cmt">// StepManager 内部的自动推帧（递归 setTimeout）</span>
+_advance() {
+  if (!this.isPlaying) return;
+<span class="hl">  const nextStep = this.next();   <span class="cmt">// 推进一帧</span></span>
+  if (!nextStep) {
+    this.isPlaying = false;
+    this.onPlayEnd(); return;
+  }
+<span class="hl">  this.timer = setTimeout(() =&gt; this._advance(), this.speed);</span>
+}</pre>
+          <p class="code-caption">
+            <strong>简洁优雅</strong>：用 <code class="inline">setTimeout</code> 递归把自己排到下一帧 — 11 行代码就实现了完整的"自动播放 + 暂停 + 调速"。
+          </p>
+        </div>
+      </div>
+    </section>
+    <!-- ============ Slide 5 / 快排 ============ -->
+    <section class="slide" data-index="4">
+      <div class="slide-num">05 / 10 · DEMO #1 · QUICKSORT</div>
+      <h2 class="slide-title">演示 ① · 快速排序</h2>
+      <p class="slide-subtitle">分治思想——选基准、分两边、递归排——通过柱状图把"分区"过程画出来。</p>
+      <div class="bento">
+        <div class="panel span2 row2">
+          <h3>🧠 分治思想：递归快排入口</h3>
+          <p class="lead">
+            <strong>选一个基准元素</strong>，把数组分成"比它小的"和"比它大的"两半，
+            然后对两半分别再做同样的事——这就是分治。
+          </p>
+<pre class="code-block compact"><span class="cmt">// js/quicksort.js · L135-153（递归入口）</span>
+<span class="kw">function</span> quicksort(low, high) {
+  <span class="kw">if</span> (low &gt;= high) <span class="kw">return</span>;          <span class="cmt">// 递归终止</span>
+  <span class="kw">const</span> p = partition(low, high);   <span class="cmt">// ← 分（Lomuto 分区，见右下）</span>
+  quicksort(low, p - 1);             <span class="cmt">// ← 治：递归左半</span>
+  quicksort(p + 1, high);            <span class="cmt">// ← 治：递归右半</span>
+}</pre>
+          <p class="lead" style="margin-top:8px;">
+            每一步都录一帧，柱状图上用四种颜色实时标注：
+          </p>
+          <div class="legend" style="margin-top:6px;">
+            <span class="item"><span class="dot" style="background:#a855f7;"></span> 基准 (pivot)</span>
+            <span class="item"><span class="dot" style="background:#f59e0b;"></span> 正在比较</span>
+            <span class="item"><span class="dot" style="background:#ef4444;"></span> 正在交换</span>
+            <span class="item"><span class="dot" style="background:#22c55e;"></span> 已就位</span>
+          </div>
+        </div>
+        <a class="card demo-cue demo-cue-compact span2" href="../pages/quicksort.html" target="_blank">
+          <h3>▶ 现在打开演示 · 按 <span class="kbd">D</span> 键</h3>
+          <p class="lead">推荐：选「逆序数组」展示最坏情况下的递归深度</p>
+          <div class="row">
+            <span class="pill pill-info">平均 O(n log n)</span>
+            <span class="pill pill-warn">最坏 O(n²)</span>
+            <span class="pill pill-success">空间 O(log n)</span>
+          </div>
+        </a>
+        <div class="card code-card span2">
+          <h3>📜 Lomuto 分区核心</h3>
+          <div class="code-source">js/quicksort.js · L94-102</div>
+<pre class="code-block"><span class="cmt">// 单指针从左扫到右，发现比基准小的就交换</span>
+if (arr[j] &lt;= pivotVal) {
+  i++;
+  if (i !== j) {
+<span class="hl">    [arr[i], arr[j]] = [arr[j], arr[i]];  <span class="cmt">// ES6 解构交换</span></span>
+<span class="hl">    addStep(high, null, null, { low, high }, '交换完成');</span>
+  }
+}</pre>
+          <p class="code-caption">
+            <strong>数据驱动渲染</strong>：算法每动一下数据，<code class="inline">addStep</code> 就立刻把状态快照写进 steps[]，UI 之后逐帧回放。
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ Slide 6 / Dijkstra ============ -->
+    <section class="slide" data-index="5">
+      <div class="slide-num">06 / 10 · DEMO #2 · DIJKSTRA</div>
+      <h2 class="slide-title">演示 ② · Dijkstra 最短路径</h2>
+      <p class="slide-subtitle">在带权图上找一个点到其他所有点的最短路——用节点染色实时呈现"已确定 / 在考察 / 未访问"。</p>
+      <div class="bento">
+        <div class="panel span2 row2">
+          <h3>🧠 主循环骨架：挑最小 → 松弛邻居</h3>
+          <p class="lead">
+            每一轮，从"未确定的点"里挑一个<strong>当前距离最近的</strong>，
+            把它标为"已确定"，然后用它去松弛它的邻居——
+            <em>如果走我能到你那里更近，那就更新</em>。
+          </p>
+<pre class="code-block compact"><span class="cmt">// js/dijkstra.js · L90-140（主循环骨架）</span>
+<span class="kw">while</span> (visited.length &lt; nodes.length) {
+  <span class="kw">const</span> u = pickMinUnvisited();   <span class="cmt">// ← 挑当前最近的未访问点</span>
+  <span class="kw">if</span> (u === null) <span class="kw">break</span>;          <span class="cmt">// 剩余不可达</span>
+  visited.push(u);                <span class="cmt">// 标记已确定</span>
+  <span class="kw">for</span> (<span class="kw">const</span> edge <span class="kw">of</span> adj.get(u))  <span class="cmt">// ← 松弛 u 的每条出边</span>
+    relax(u, edge);               <span class="cmt">//   ↑ 细节见右下代码卡</span>
+}</pre>
+          <p class="lead" style="margin-top:8px;">节点状态用颜色直观区分：</p>
+          <div class="legend" style="margin-top:6px;">
+            <span class="item"><span class="dot" style="background:#52525b;"></span> 未访问</span>
+            <span class="item"><span class="dot" style="background:#2563eb;"></span> 当前考察</span>
+            <span class="item"><span class="dot" style="background:#d97706;"></span> 松弛边</span>
+            <span class="item"><span class="dot" style="background:#16a34a;"></span> 已确定</span>
+          </div>
+        </div>
+        <a class="card demo-cue demo-cue-compact span2" href="../pages/dijkstra.html" target="_blank">
+          <h3>▶ 现在打开演示 · 按 <span class="kbd">D</span> 键</h3>
+          <p class="lead">推荐：选「典型 5 节点图」展示松弛 + 路径回溯</p>
+          <div class="row">
+            <span class="pill pill-info">时间 O(V²)</span>
+            <span class="pill pill-success">空间 O(V + E)</span>
+          </div>
+        </a>
+        <div class="card code-card span2">
+          <h3>📜 边松弛逻辑</h3>
+          <div class="code-source">js/dijkstra.js · L123-130</div>
+<pre class="code-block"><span class="cmt">// 用当前点 u 去更新邻居 to 的距离</span>
+<span class="hl">if (newDist &lt; distances[to]) {   <span class="cmt">// 松弛判断：绕道更近就更新</span></span>
+  distances[to] = newDist;
+  previous[to]  = u;
+  steps.push(makeState(
+    distances, previous, visited, u, edge, 'relax',
+    `松弛边 ${u}→${to}：距离更新为 ${newDist}`
+  ));
+}</pre>
+          <p class="code-caption">
+            <strong>松弛 (Relaxation)</strong>：Dijkstra 的全部秘密就在这一行 if 判断里——"如果借道你能更近，就更新邻居的最短距离"。
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ Slide 7 / 汉诺塔 ============ -->
+    <section class="slide" data-index="6">
+      <div class="slide-num">07 / 10 · DEMO #3 · HANOI</div>
+      <h2 class="slide-title">演示 ③ · 汉诺塔</h2>
+      <p class="slide-subtitle">最经典的递归——把"n 个盘子从 A 移到 C"拆成三步走，最直观的递归动画。</p>
+      <div class="bento">
+        <div class="panel span2 row2">
+          <h3>🧠 递归三步走</h3>
+          <p class="lead">要把 <strong>n 个盘子</strong> 从 A 移到 C，递归地做三件事：</p>
+          <ul class="tight" style="margin-top:6px;">
+            <li>① 把上面 <strong>n−1 个</strong>盘子借助 C 移到 B</li>
+            <li>② 把<strong>最大的盘子</strong>从 A 移到 C</li>
+            <li>③ 把那 <strong>n−1 个</strong>盘子从 B 借助 A 移到 C</li>
+          </ul>
+<div class="tower-ascii"><span class="tower-empty">初始：</span>A [<span class="tower-disk">▰▰▰</span>]   B [<span class="tower-empty">   </span>]   C [<span class="tower-empty">   </span>]
+       <span class="tower-arrow">↓</span>  递归三步走，共 <span class="tower-disk">2ⁿ − 1</span> 次移动
+<span class="tower-empty">完成：</span>A [<span class="tower-empty">   </span>]   B [<span class="tower-empty">   </span>]   C [<span class="tower-disk">▰▰▰</span>]</div>
+          <p class="lead" style="margin-top:10px;font-size:0.9rem;">
+            一次调用拆三步，每步再递归——总步数恰好是 <code class="inline">2ⁿ − 1</code>：
+          </p>
+          <div class="steps-table">
+            <span class="cell">n=1 → <strong>1</strong> 步</span>
+            <span class="cell">n=3 → <strong>7</strong> 步</span>
+            <span class="cell">n=6 → <strong>63</strong> 步</span>
+            <span class="cell">n=8 → <strong>255</strong> 步</span>
+          </div>
+        </div>
+        <a class="card demo-cue demo-cue-compact span2" href="../pages/hanoi.html" target="_blank">
+          <h3>▶ 现在打开演示 · 按 <span class="kbd">D</span> 键</h3>
+          <p class="lead">推荐：从 3 盘开始（7 步），再切 6 盘（63 步）感受指数增长</p>
+          <div class="row">
+            <span class="pill pill-info">时间 O(2ⁿ)</span>
+            <span class="pill pill-success">空间 O(n)</span>
+            <span class="pill pill-warn">2ⁿ − 1 步</span>
+          </div>
+        </a>
+        <div class="card code-card span2">
+          <h3>📜 递归三步曲</h3>
+          <div class="code-source">js/hanoi.js · L122-131</div>
+<pre class="code-block"><span class="cmt">// 把 k 个盘子从 from 借助 via 移到 to</span>
+const hanoi = (k, from, to, via) =&gt; {
+  if (k &lt;= 0) return;
+  if (k === 1) { moveOne(from, to); return; }
+<span class="hl">  hanoi(k - 1, from, via, to);   <span class="cmt">// ① 先把上面 n-1 搬开</span></span>
+  moveOne(from, to);              <span class="cmt">// ② 搬最大那一个</span>
+<span class="hl">  hanoi(k - 1, via, to, from);   <span class="cmt">// ③ 再把 n-1 搬回来</span></span>
+};</pre>
+          <p class="code-caption">
+            <strong>递归之美</strong>：9 行代码描述了一个 <code class="inline">2ⁿ − 1</code> 步的过程——分解、解决、合并，递归思维的教科书示范。
+          </p>
+        </div>
+      </div>
+    </section>
+    <!-- ============ Slide 8 / 工程实践 ============ -->
+    <section class="slide" data-index="7">
+      <div class="slide-num">08 / 10 · ENGINEERING</div>
+      <h2 class="slide-title">工程实践</h2>
+      <p class="slide-subtitle">不只把功能跑起来——分支策略、测试用例、浏览器兼容、文档同步，每一项都按规范做了。</p>
+      <div class="bento">
+        <div class="card span2">
+          <h3>🌿 Git 分支策略 · 多分支协作 + PR 审查</h3>
+          <p class="lead" style="font-size:0.88rem;">
+            <code class="inline">main</code> 始终可发布；三人各自在 feature 分支独立开发，
+            通过 <strong>Pull Request</strong> 互相 review 后合入主线。
+          </p>
+          <div class="git-graph-svg">
+            <svg viewBox="0 0 520 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Git 分支协作示意图">
+              <!-- 三条 feature 分支线 -->
+              <path class="branch-line" d="M 70,40 L 200,40 Q 240,40 260,80 L 260,90"
+                    stroke="#a855f7"/>
+              <path class="branch-line" d="M 70,100 L 240,100 Q 260,100 260,110"
+                    stroke="#16a34a"/>
+              <path class="branch-line" d="M 70,160 L 200,160 Q 240,160 260,120 L 260,110"
+                    stroke="#d97706"/>
+
+              <!-- main 主干 -->
+              <path class="branch-line" d="M 260,100 L 470,100"
+                    stroke="#2563eb" stroke-width="4"/>
+
+              <!-- 三条分支的提交点 -->
+              <circle class="commit-dot" cx="100" cy="40" r="6" fill="#a855f7"/>
+              <circle class="commit-dot" cx="140" cy="40" r="6" fill="#a855f7"/>
+              <circle class="commit-dot" cx="180" cy="40" r="6" fill="#a855f7"/>
+
+              <circle class="commit-dot" cx="100" cy="100" r="6" fill="#16a34a"/>
+              <circle class="commit-dot" cx="140" cy="100" r="6" fill="#16a34a"/>
+              <circle class="commit-dot" cx="180" cy="100" r="6" fill="#16a34a"/>
+              <circle class="commit-dot" cx="220" cy="100" r="6" fill="#16a34a"/>
+
+              <circle class="commit-dot" cx="100" cy="160" r="6" fill="#d97706"/>
+              <circle class="commit-dot" cx="140" cy="160" r="6" fill="#d97706"/>
+              <circle class="commit-dot" cx="180" cy="160" r="6" fill="#d97706"/>
+
+              <!-- main 主干的合并提交点 -->
+              <circle class="commit-dot main" cx="260" cy="100" r="8" fill="#2563eb"/>
+              <circle class="commit-dot main" cx="320" cy="100" r="8" fill="#2563eb"/>
+              <circle class="commit-dot main" cx="380" cy="100" r="8" fill="#2563eb"/>
+              <circle class="commit-dot main" cx="445" cy="100" r="9" fill="#2563eb"/>
+
+              <!-- 分支标签（左侧） -->
+              <text class="branch-label" x="55" y="44" text-anchor="end" fill="#a855f7">feature/sun</text>
+              <text class="branch-label" x="55" y="104" text-anchor="end" fill="#16a34a">feature/liu</text>
+              <text class="branch-label" x="55" y="164" text-anchor="end" fill="#d97706">feature/yang</text>
+
+              <!-- main 标签（右侧） -->
+              <text class="branch-label" x="478" y="96" fill="#2563eb">main</text>
+              <text class="stage-label"  x="478" y="111">交付版本</text>
+
+              <!-- PR 审查徽标（汇合处） -->
+              <g transform="translate(228, 64)">
+                <rect class="pr-badge-bg" x="0" y="0" width="46" height="18" rx="9"/>
+                <text class="pr-badge" x="23" y="13" text-anchor="middle">PR ✓</text>
+              </g>
+              <g transform="translate(228, 122)">
+                <rect class="pr-badge-bg" x="0" y="0" width="46" height="18" rx="9"/>
+                <text class="pr-badge" x="23" y="13" text-anchor="middle">PR ✓</text>
+              </g>
+
+              <!-- main 上方的阶段标签 -->
+              <text class="stage-label" x="290" y="80" text-anchor="middle">feature</text>
+              <text class="stage-label" x="350" y="80" text-anchor="middle">集成</text>
+              <text class="stage-label" x="410" y="80" text-anchor="middle">refactor &amp; docs</text>
+            </svg>
+          </div>
+          <div class="branch-legend">
+            <span class="b-item"><span class="b-dot" style="background:#2563eb;"></span>main · 主干</span>
+            <span class="b-item"><span class="b-dot" style="background:#a855f7;"></span>孙郭昕 · 快排</span>
+            <span class="b-item"><span class="b-dot" style="background:#16a34a;"></span>刘卓明 · 基建/Dijkstra</span>
+            <span class="b-item"><span class="b-dot" style="background:#d97706;"></span>杨帆 · 汉诺塔</span>
+          </div>
+        </div>
+        <div class="card span2">
+          <h3>✅ 验收清单（AC-1 ~ AC-10）</h3>
+          <ul class="tight" style="font-size:0.86rem;">
+            <li>AC-1~3：三算法可跑 + 统一入口 + 含中等难度</li>
+            <li>AC-4~6：三种输入 + 逐步演示 + 关键状态/复杂度展示</li>
+            <li>AC-7~10：≥6 用例 + 文档完整 + 非法输入不崩 + 三浏览器兼容</li>
+          </ul>
+          <p class="meta" style="margin-top:4px;color:var(--success);">✓ 10/10 全部通过</p>
+        </div>
+        <div class="card span2">
+          <h3>🧪 10 条预置测试用例</h3>
+          <ul class="tight" style="font-size:0.86rem;">
+            <li><strong>快排 ×3：</strong>随机数组 / 含重复 / 逆序数组</li>
+            <li><strong>Dijkstra ×3：</strong>典型 5 节点图 / 含不可达节点 / 单条路径</li>
+            <li><strong>汉诺塔 ×4：</strong>1 / 3 / 4 / 6 盘（边界 → 经典 → 指数）</li>
+          </ul>
+          <p class="meta" style="margin-top:4px;">每个用例都对应一种"边界 / 典型 / 最坏"场景</p>
+        </div>
+        <div class="card span2">
+          <h3>🌐 浏览器兼容矩阵</h3>
+          <p class="lead" style="font-size:0.88rem;">
+            实测通过：<strong>Chrome ≥ 99 / Edge ≥ 99</strong>。
+          </p>
+          <p class="meta" style="margin-top:6px;">
+            已对 <code class="inline">ctx.roundRect</code>、<code class="inline">backdrop-filter</code>
+            等较新 API 做降级处理。
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ Slide 9 / AI 协作反思 ============ -->
+    <section class="slide" data-index="8">
+      <div class="slide-num">09 / 10 · REFLECTION</div>
+      <h2 class="slide-title">AI 协作辅助开发</h2>
+      <p class="slide-subtitle">课程指导书鼓励使用 AI 辅助开发——我们使用了Claude Code帮助我们进行项目设计和代码编写</p>
+      <div class="bento">
+        <div class="panel span2 row2">
+          <h3><span class="pill pill-info">AI 协作</span> 我们这样使用AI：</h3>
+          <p class="lead">
+            <strong>课程指导书明确鼓励使用 AI 工具辅助开发。</strong>我们使用 AI 写了大部分初始代码，通过AI先来引导思路。
+            但<em>AI 是工具，决策权必须在我们</em>。所以我们通过下面三件事，让这套代码真正成为"我们的项目"——
+          </p>
+          <ul class="tight" style="margin-top:10px;">
+            <li><strong>① 逐模块 Review</strong>——理解每个函数在做什么、为什么这样做</li>
+            <li><strong>② 删冗余</strong>——AI 无法面面俱到项目的每个方面，会有遗漏的部分，我们主动剪枝</li>
+            <li><strong>③ 对齐文档</strong>——保证设计文档、代码、注释三者一致</li>
+          </ul>
+          <p class="lead" style="margin-top:10px;color:var(--accent);font-weight:600;">
+            我们把团队定位为 AI 的 reviewer 与 editor——这是工程师在 AI 时代的核心角色。
+          </p>
+        </div>
+        <div class="card span2">
+          <h3>🔍 Review 案例</h3>
+          <p class="lead">
+            发现 <code class="inline">StepManager.addStep</code> <strong>不会自动深拷贝</strong>——
+            算法模块必须在录帧前手动 <code class="inline">Common.deepClone(state)</code>，
+            否则后续步骤会污染历史快照。
+          </p>
+          <p class="meta" style="margin-top:6px;">这种"沉默的陷阱"必须靠人工 review 才能发现</p>
+        </div>
+        <div class="card">
+          <h3>🗑️ 删冗余</h3>
+          <p class="lead">
+            整轮清理删掉 <strong>7 个零调用接口</strong>：<code class="inline">$$</code> /
+            <code class="inline">formatNumberArray</code> / <code class="inline">randomGraph</code> 等。
+          </p>
+        </div>
+        <div class="card">
+          <h3>📝 对齐文档</h3>
+          <p class="lead">
+            设计稿曾设想 <code class="inline">CanvasHelper</code> / <code class="inline">Validator</code> /
+            <code class="inline">Logger</code> 三个命名空间——
+            <strong>最终未实现</strong>，在 CLAUDE.md 校对日志主动更新。
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ Slide 10 / 总结与展望 ============ -->
+    <section class="slide" data-index="9">
+      <div class="slide-num">10 / 10 · WRAP UP</div>
+      <h2 class="slide-title">总结与展望</h2>
+      <p class="slide-subtitle">已完成什么 · 还可以做什么 · 致谢。</p>
+      <div class="bento">
+        <div class="panel span4">
+          <h3>📦 已交付清单</h3>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:8px;">
+            <div><div class="stat">3</div><div class="stat-label">算法可视化模块</div></div>
+            <div><div class="stat">9</div><div class="stat-label">预置测试用例</div></div>
+            <div><div class="stat">10/10</div><div class="stat-label">验收项通过</div></div>
+            <div><div class="stat">0</div><div class="stat-label">外部依赖</div></div>
+          </div>
+          <p class="lead" style="margin-top:14px;">
+            一套统一风格的算法可视化系统 + 完整的工程文档（需求 / 设计 / 实现 / 测试） + 团队个人开发日志。
+          </p>
+        </div>
+        <div class="card span2">
+          <h3>🔭 后续可做（本期未实现）</h3>
+          <ul class="tight" style="font-size:0.88rem;">
+            <li>EXT-3 步骤日志导出（学习者带回去复盘）</li>
+            <li>EXT-4 同类算法对比（如快排 vs 归并）</li>
+            <li>EXT-5 LocalStorage 保存自定义测试数据</li>
+            <li>EXT-7 题目讲解模式（每步配教学文案）</li>
+          </ul>
+        </div>
+        <div class="card span2">
+          <h3>🙏 致谢</h3>
+          <p class="lead">感谢指导教师的耐心点评，也感谢同组小伙伴的紧密协作。</p>
+          <p class="meta" style="margin-top:6px;">本项目所有源代码与文档已发布至 GitHub：<code class="inline">Komorebi618/algo-visualizer-group14</code></p>
+        </div>
+        <div class="span4 footer-thanks">
+          <div class="thank-chip">
+            <div class="name">刘卓明</div>
+            <div class="role">组长 · 项目基建 · Dijkstra · 文档统筹</div>
+          </div>
+          <div class="thank-chip">
+            <div class="name">杨帆</div>
+            <div class="role">公共工具库 · 汉诺塔</div>
+          </div>
+          <div class="thank-chip">
+            <div class="name">孙郭昕</div>
+            <div class="role">UI 样式 · 快速排序</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <div class="hint">
+    <span class="kbd">←</span> <span class="kbd">→</span> 翻页 ·
+    <span class="kbd">Space</span> 下一页 ·
+    <span class="kbd">G</span> 跳转 ·
+    <span class="kbd">D</span> 打开 Demo ·
+    <span class="kbd">Home</span>/<span class="kbd">End</span> 首末
+  </div>
+  <button class="jump-toggle" id="btnJump" title="快速跳转 (G)">⋮</button>
+  <div class="pager" id="pager">
+    <button id="btnPrev" title="上一页 (←)">‹</button>
+    <span class="count" id="counter">1 / 10</span>
+    <button id="btnNext" title="下一页 (→)">›</button>
+  </div>
+
+  <div class="jump-overlay" id="jumpOverlay" role="dialog" aria-modal="true" aria-label="快速跳转">
+    <div class="jump-panel">
+      <div class="jump-panel-header">
+        <h3>跳转到幻灯片</h3>
+        <span class="hint-text">输入数字或关键字 · <span class="kbd">Enter</span> 跳转 · <span class="kbd">Esc</span> 关闭</span>
+      </div>
+      <input type="text" class="jump-search" id="jumpSearch" placeholder="输入页码（1-10）或关键字（如「Dijkstra」「快排」「AI」）…" autocomplete="off">
+      <div class="jump-list" id="jumpList"></div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+      const deck = document.getElementById('deck');
+      const slides = Array.from(deck.querySelectorAll('.slide'));
+      const total = slides.length;
+      const progressTop = document.getElementById('progressTop');
+      const counter = document.getElementById('counter');
+      let current = 0;
+
+      // 幻灯片元数据（用于跳转面板的搜索与展示）
+      const SLIDE_META = [
+        { title: '封面',                  desc: '项目标题 · 团队成员',           keywords: '封面 cover 标题 团队 第14组' },
+        { title: '选题动机 × 项目范围',   desc: '为什么做 · 做什么 · 不做什么',   keywords: '动机 motivation 痛点 教材 学习 目标 范围 scope 验收 交付物 兼容' },
+        { title: '总体架构',              desc: '五层分层 + 数据驱动',           keywords: '架构 architecture 分层 数据驱动 依赖注入' },
+        { title: '核心抽象 StepManager',  desc: '录像机 + 播放器',               keywords: 'stepmanager 核心 抽象 步骤 时间轴' },
+        { title: '快速排序',              desc: '演示 ① · Lomuto 分区',         demo: true,  keywords: '快速排序 快排 quicksort 演示 demo 分区 lomuto pivot' },
+        { title: 'Dijkstra 最短路径',     desc: '演示 ② · 节点染色',            demo: true,  keywords: 'dijkstra 最短路径 图 节点 演示 demo 松弛' },
+        { title: '汉诺塔',                desc: '演示 ③ · 经典递归',            demo: true,  keywords: '汉诺塔 hanoi 递归 演示 demo 盘子' },
+        { title: '工程实践',              desc: 'Git / 测试 / 浏览器兼容',       keywords: '工程 git 分支 测试 用例 浏览器 兼容' },
+        { title: 'AI 协作总结反思',       desc: 'vibecoding 与人工兜底',         keywords: 'ai 协作 反思 vibecoding review 指导书' },
+        { title: '总结与展望',            desc: '已交付 + 后续可做 + 致谢',       keywords: '总结 展望 致谢 后续' },
+      ];
+
+      // 顶部分段进度条
+      slides.forEach((_, i) => {
+        const seg = document.createElement('div');
+        seg.className = 'progress-segment';
+        seg.dataset.index = i;
+        seg.title = (i + 1) + '. ' + (SLIDE_META[i] ? SLIDE_META[i].title : '');
+        seg.addEventListener('click', () => go(i));
+        progressTop.appendChild(seg);
+      });
+      const segments = Array.from(progressTop.children);
+
+      function updateUI() {
+        counter.textContent = (current + 1) + ' / ' + total;
+        segments.forEach((seg, i) => {
+          seg.classList.toggle('done', i < current);
+          seg.classList.toggle('current', i === current);
+        });
+        slides.forEach((s, i) => s.classList.toggle('active', i === current));
+      }
+
+      function go(index, opts) {
+        const target = Math.max(0, Math.min(total - 1, index));
+        current = target;
+        const behavior = (opts && opts.instant) ? 'instant' : 'smooth';
+        // 水平方向滚动：用 scrollLeft 而不是 scrollIntoView，避免父容器跳动
+        try {
+          deck.scrollTo({ left: target * deck.clientWidth, behavior: behavior });
+        } catch (_) {
+          // 老浏览器降级
+          deck.scrollLeft = target * deck.clientWidth;
+        }
+        updateUI();
+      }
+
+      // 监听 scroll 同步 current（鼠标滚轮 / 触摸板横滑 / 触屏滑动）
+      let scrollTimer = null;
+      deck.addEventListener('scroll', () => {
+        if (scrollTimer) clearTimeout(scrollTimer);
+        scrollTimer = setTimeout(() => {
+          const idx = Math.round(deck.scrollLeft / deck.clientWidth);
+          if (idx !== current) {
+            current = Math.max(0, Math.min(total - 1, idx));
+            updateUI();
+          }
+        }, 120);
+      });
+
+      // 窗口尺寸变化时重新对齐到当前页
+      window.addEventListener('resize', () => {
+        deck.scrollLeft = current * deck.clientWidth;
+      });
+
+      /* ========== 跳转面板 ========== */
+      const jumpOverlay = document.getElementById('jumpOverlay');
+      const jumpSearch = document.getElementById('jumpSearch');
+      const jumpList = document.getElementById('jumpList');
+      const btnJump = document.getElementById('btnJump');
+      let focusedJumpIdx = 0;
+      let filteredIndices = SLIDE_META.map((_, i) => i);
+
+      function buildJumpList(filter) {
+        const q = (filter || '').trim().toLowerCase();
+        filteredIndices = SLIDE_META
+          .map((m, i) => ({ m, i }))
+          .filter(({ m, i }) => {
+            if (!q) return true;
+            // 纯数字 → 按页码精确匹配
+            if (/^\d+$/.test(q)) return String(i + 1).startsWith(q);
+            const hay = (m.title + ' ' + m.desc + ' ' + (m.keywords || '')).toLowerCase();
+            return hay.includes(q);
+          })
+          .map(({ i }) => i);
+
+        jumpList.innerHTML = '';
+        if (filteredIndices.length === 0) {
+          const empty = document.createElement('div');
+          empty.className = 'jump-empty';
+          empty.textContent = '没有匹配的幻灯片，试试输入页码或换个关键字。';
+          jumpList.appendChild(empty);
+          return;
+        }
+
+        filteredIndices.forEach((idx, listPos) => {
+          const m = SLIDE_META[idx];
+          const item = document.createElement('button');
+          item.type = 'button';
+          item.className = 'jump-item' + (m.demo ? ' demo' : '') + (idx === current ? ' current' : '') + (listPos === focusedJumpIdx ? ' focused' : '');
+          item.dataset.target = idx;
+          item.innerHTML =
+            '<span class="idx">' + String(idx + 1).padStart(2, '0') + ' / ' + total + '</span>' +
+            '<span class="ttl">' + m.title + '</span>' +
+            '<span class="desc">' + m.desc + '</span>';
+          item.addEventListener('click', () => {
+            closeJump();
+            go(idx);
+          });
+          jumpList.appendChild(item);
+        });
+      }
+
+      function openJump() {
+        focusedJumpIdx = 0;
+        jumpSearch.value = '';
+        buildJumpList('');
+        jumpOverlay.classList.add('open');
+        setTimeout(() => jumpSearch.focus(), 20);
+      }
+
+      function closeJump() {
+        jumpOverlay.classList.remove('open');
+      }
+
+      function moveJumpFocus(delta) {
+        if (filteredIndices.length === 0) return;
+        focusedJumpIdx = (focusedJumpIdx + delta + filteredIndices.length) % filteredIndices.length;
+        Array.from(jumpList.children).forEach((el, i) => el.classList.toggle('focused', i === focusedJumpIdx));
+        const focusedEl = jumpList.children[focusedJumpIdx];
+        if (focusedEl && focusedEl.scrollIntoView) focusedEl.scrollIntoView({ block: 'nearest' });
+      }
+
+      btnJump.addEventListener('click', openJump);
+
+      jumpOverlay.addEventListener('click', (e) => {
+        if (e.target === jumpOverlay) closeJump();
+      });
+
+      jumpSearch.addEventListener('input', (e) => {
+        focusedJumpIdx = 0;
+        buildJumpList(e.target.value);
+      });
+
+      jumpSearch.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') { e.preventDefault(); closeJump(); }
+        else if (e.key === 'Enter') {
+          e.preventDefault();
+          const target = filteredIndices[focusedJumpIdx];
+          if (target !== undefined) { closeJump(); go(target); }
+        }
+        else if (e.key === 'ArrowDown') { e.preventDefault(); moveJumpFocus(1); }
+        else if (e.key === 'ArrowUp')   { e.preventDefault(); moveJumpFocus(-1); }
+      });
+
+      /* ========== 全局按键 ========== */
+      document.addEventListener('keydown', (e) => {
+        // 跳转面板打开时由面板自己接管
+        if (jumpOverlay.classList.contains('open')) return;
+        const t = e.target;
+        if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return;
+
+        // 数字 1-9：直接跳到对应页
+        if (/^[1-9]$/.test(e.key)) {
+          const target = parseInt(e.key, 10) - 1;
+          if (target < total) {
+            e.preventDefault();
+            go(target);
+          }
+          return;
+        }
+        // 数字 0 → 第 10 页（如存在）
+        if (e.key === '0') {
+          if (total >= 10) { e.preventDefault(); go(9); }
+          return;
+        }
+
+        switch (e.key) {
+          case 'ArrowRight':
+          case 'PageDown':
+          case ' ':
+            e.preventDefault();
+            go(current + 1);
+            break;
+          case 'ArrowLeft':
+          case 'PageUp':
+            e.preventDefault();
+            go(current - 1);
+            break;
+          case 'Home':
+            e.preventDefault();
+            go(0);
+            break;
+          case 'End':
+            e.preventDefault();
+            go(total - 1);
+            break;
+          case 'g':
+          case 'G':
+            e.preventDefault();
+            openJump();
+            break;
+          case 'd':
+          case 'D': {
+            // 仅在算法演示页（#5/#6/#7）响应
+            const demoMap = { 4: '../pages/quicksort.html', 5: '../pages/dijkstra.html', 6: '../pages/hanoi.html' };
+            const url = demoMap[current];
+            if (url) window.open(url, '_blank');
+            break;
+          }
+        }
+      });
+
+      // 翻页按钮
+      document.getElementById('btnPrev').addEventListener('click', () => go(current - 1));
+      document.getElementById('btnNext').addEventListener('click', () => go(current + 1));
+
+      // mini 时间轴：模拟 StepManager.next() 自动推进
+      const frames = [
+        document.getElementById('f0'),
+        document.getElementById('f1'),
+        document.getElementById('f2'),
+        document.getElementById('f3'),
+        document.getElementById('f4'),
+      ];
+      const frameLabel = document.getElementById('frameLabel');
+      let frameIdx = 0;
+      setInterval(() => {
+        frames.forEach((f, i) => f && f.classList.toggle('on', i <= frameIdx));
+        if (frameLabel) frameLabel.textContent = (frameIdx + 1) + ' / 5';
+        frameIdx = (frameIdx + 1) % 5;
+      }, 1500);
+
+      // 初始化
+      go(0, { instant: true });
+    })();
+  </script>
+</body>
+</html>
