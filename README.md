@@ -14,9 +14,7 @@
 | CSS | CSS3(含 CSS 变量、CSS Grid、Flexbox、`backdrop-filter`) |
 | JavaScript | ES6+(箭头函数、解构、模板字符串、`class`、`const`/`let`、可选链) |
 | 运行环境 | 现代浏览器,无需任何编译器或构建工具 |
-| 推荐浏览器 | **Chrome ≥ 99** / **Edge ≥ 99** / **Firefox ≥ 103**(均已实测通过) |
-
-> 项目使用了 `ctx.roundRect`(Chrome 99+) 和 `backdrop-filter`(Firefox 103+),已为旧版浏览器做了降级处理(`ctx.rect` 兜底)。
+| 推荐浏览器 | **Chrome ≥ 99** / **Edge ≥ 99**|
 
 ---
 
